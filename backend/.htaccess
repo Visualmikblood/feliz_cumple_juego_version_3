@@ -1,0 +1,26 @@
+RewriteEngine On
+
+# Permitir CORS
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+
+# Redirigir todas las peticiones a api/index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ api/index.php?path=$1 [QSA,L]
+
+# Configuración de seguridad
+<Files "*.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# Evitar acceso directo a archivos sensibles
+<FilesMatch "\.(sql|log|env)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Configurar tipos MIME
+AddType application/json .json
