@@ -808,7 +808,7 @@ const BirthdayGame = () => {
 
         console.log(`${submittedCount}/${totalPlayers} mensajes enviados`);
 
-        if (submittedCount >= totalPlayers && isHost) {
+        if (submittedCount >= totalPlayers) {
           // Todos han enviado mensajes, pasar a calificación
           setGameState('playing');
           await getPlayerMessages();
