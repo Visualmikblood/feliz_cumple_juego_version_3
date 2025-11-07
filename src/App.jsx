@@ -43,7 +43,11 @@ const BirthdayGame = () => {
   const [allPlayersRatings, setAllPlayersRatings] = useState({});
   const [multiplayerResults, setMultiplayerResults] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [timeLimitHours, setTimeLimitHours] = useState(72);
+  const [deadlineDateTime, setDeadlineDateTime] = useState(() => {
+    const now = new Date();
+    now.setHours(now.getHours() + 72); // 72 horas por defecto
+    return now.toISOString().slice(0, 16);
+  });
   const [availableRooms, setAvailableRooms] = useState([]);
   const [showAvailableRooms, setShowAvailableRooms] = useState(false);
   const [currentComment, setCurrentComment] = useState('');
@@ -549,7 +553,11 @@ const BirthdayGame = () => {
     setError(null);
     
     try {
-      const response = await roomsAPI.create(playerName, null, timeLimitHours);
+      const deadline = new Date(deadlineDateTime);
+      const now = new Date();
+      const hoursDiff = Math.ceil((deadline - now) / (1000 * 60 * 60));
+
+      const response = await roomsAPI.create(playerName, null, hoursDiff);
       
       if (response.success) {
         const { room_id, room_code, player_id, session_id } = response.data;
@@ -685,6 +693,64 @@ const BirthdayGame = () => {
       }
     } catch (error) {
       console.error('Error al obtener información de la sala:', error);
+    }
+  };
+
+  // Función para volver a entrar a una sala existente
+  const rejoinRoom = async (roomCode) => {
+    if (!validators.roomCode(roomCode)) {
+      setError('Por favor ingresa un código de sala válido (6 caracteres)');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Primero intentar obtener información de la sala para verificar que existe
+      const roomInfoResponse = await fetch(`http://localhost:8000/api/index.php?path=rooms/info&roomId=${roomCode}`);
+      const roomInfo = await roomInfoResponse.json();
+
+      if (!roomInfo.success) {
+        setError('La sala no existe o ha expirado');
+        return;
+      }
+
+      // Si la sala existe, intentar unirse
+      const response = await roomsAPI.join(roomCode, playerName);
+
+      if (response.success) {
+        const { room_id, player_id, session_id, status } = response.data;
+
+        setCurrentPlayerId(player_id);
+        setSessionId(session_id);
+        setIsHost(false);
+        setGameState(status === 'playing' ? 'playing' : status === 'finished' ? 'results' : 'waiting');
+
+        // Guardar sesión
+        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName);
+
+        // Obtener información de la sala
+        await getRoomInfo(room_id);
+
+        // Si estamos en playing, obtener mensajes
+        if (status === 'playing') {
+          await getPlayerMessages();
+        }
+
+        // Si estamos en results, obtener resultados
+        if (status === 'finished') {
+          await getMultiplayerResults();
+        }
+
+        generateConfetti(30);
+      } else {
+        setError(handleApiError(response));
+      }
+    } catch (error) {
+      setError(handleApiError(error, 'Error al volver a entrar a la sala'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1162,17 +1228,45 @@ const BirthdayGame = () => {
                   placeholder="CÓDIGO DE SALA"
                   className="w-full px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
                 />
-                <button
-                  onClick={() => {
-                    console.log('Uniéndose a sala:', gameRoomId, 'con nombre:', playerName);
-                    joinRoom();
-                  }}
-                  disabled={!playerName.trim() || !gameRoomId.trim() || loading}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-3 px-6 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 w-full"
-                >
-                  <Users className="w-5 h-5 inline mr-2" />
-                  {loading ? 'Uniéndose...' : 'Unirse'}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      console.log('Uniéndose a sala:', gameRoomId, 'con nombre:', playerName);
+                      joinRoom();
+                    }}
+                    disabled={!playerName.trim() || !gameRoomId.trim() || loading}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+                  >
+                    <Users className="w-4 h-4 inline mr-1" />
+                    {loading ? '...' : 'Unirse'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('Volviendo a entrar a sala:', gameRoomId, 'con nombre:', playerName);
+                      rejoinRoom(gameRoomId);
+                    }}
+                    disabled={!playerName.trim() || !gameRoomId.trim() || loading}
+                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-4 h-4 inline mr-1" />
+                    {loading ? '...' : 'Re-entrar'}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-white/90 text-sm font-medium">
+                    Fecha límite para calificar:
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={deadlineDateTime}
+                    onChange={(e) => setDeadlineDateTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                  <p className="text-white/60 text-xs text-center">
+                    Los jugadores tendrán hasta esta fecha y hora para calificar todos los mensajes
+                  </p>
+                </div>
               </div>
             </div>
 
