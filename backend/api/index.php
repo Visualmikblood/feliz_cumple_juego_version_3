@@ -150,6 +150,20 @@ try {
                 throw new Exception('Método no permitido');
             }
             try {
+                // Crear tabla si no existe
+                $pdo->exec("CREATE TABLE IF NOT EXISTS player_messages (
+                    id int(11) NOT NULL AUTO_INCREMENT,
+                    room_id int(11) NOT NULL,
+                    player_id int(11) NOT NULL,
+                    message text NOT NULL,
+                    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY room_id (room_id),
+                    KEY player_id (player_id),
+                    FOREIGN KEY (room_id) REFERENCES game_rooms(id) ON DELETE CASCADE,
+                    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
                 $stmt = $pdo->prepare("
                     INSERT INTO player_messages (room_id, player_id, message)
                     VALUES (?, ?, ?)
@@ -170,6 +184,20 @@ try {
                 throw new Exception('Método no permitido');
             }
             try {
+                // Crear tabla si no existe
+                $pdo->exec("CREATE TABLE IF NOT EXISTS player_messages (
+                    id int(11) NOT NULL AUTO_INCREMENT,
+                    room_id int(11) NOT NULL,
+                    player_id int(11) NOT NULL,
+                    message text NOT NULL,
+                    created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    KEY room_id (room_id),
+                    KEY player_id (player_id),
+                    FOREIGN KEY (room_id) REFERENCES game_rooms(id) ON DELETE CASCADE,
+                    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
                 $stmt = $pdo->prepare("
                     SELECT pm.id, pm.message, pm.created_at, p.name as player_name, p.profile_photo
                     FROM player_messages pm

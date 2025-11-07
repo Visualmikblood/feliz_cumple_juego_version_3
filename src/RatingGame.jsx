@@ -269,7 +269,7 @@ const RatingGame = ({
                     }}
                   />
                   <div className={`w-full h-full ${friend.color} rounded-full flex items-center justify-center ${friend.photo ? 'hidden' : 'flex'}`}>
-                    <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                    {IconComponent && typeof IconComponent === 'function' ? <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" /> : <span className="text-white text-lg font-bold">{friend.name ? friend.name.charAt(0).toUpperCase() : '?'}</span>}
                   </div>
 
                   {isClicked && (
@@ -356,8 +356,8 @@ const RatingGame = ({
                         }}
                       />
                       <div className={`w-12 h-12 ${getBestRatedFriend().color} rounded-full flex items-center justify-center ${getBestRatedFriend().photo ? 'hidden' : 'flex'}`}>
-                        {React.createElement(getBestRatedFriend().icon, { className: "w-6 h-6 text-white" })}
-                      </div>
+                       {getBestRatedFriend().icon && typeof getBestRatedFriend().icon === 'function' ? React.createElement(getBestRatedFriend().icon, { className: "w-6 h-6 text-white" }) : <span className="text-white text-sm font-bold">{getBestRatedFriend().name ? getBestRatedFriend().name.charAt(0).toUpperCase() : '?'}</span>}
+                     </div>
                       <div>
                         <p className="text-white font-bold">{getBestRatedFriend().name}</p>
                         <p className="text-green-200">{Math.max(...Object.values(friendRatings))}/100 puntos</p>
@@ -379,8 +379,8 @@ const RatingGame = ({
                           }}
                         />
                         <div className={`w-12 h-12 ${getWorstRatedFriend().color} rounded-full flex items-center justify-center ${getWorstRatedFriend().photo ? 'hidden' : 'flex'}`}>
-                          {React.createElement(getWorstRatedFriend().icon, { className: "w-6 h-6 text-white" })}
-                        </div>
+                         {getWorstRatedFriend().icon && typeof getWorstRatedFriend().icon === 'function' ? React.createElement(getWorstRatedFriend().icon, { className: "w-6 h-6 text-white" }) : <span className="text-white text-sm font-bold">{getWorstRatedFriend().name ? getWorstRatedFriend().name.charAt(0).toUpperCase() : '?'}</span>}
+                       </div>
                         <div>
                           <p className="text-white font-bold">{getWorstRatedFriend().name}</p>
                           <p className="text-red-200">{Math.min(...Object.values(friendRatings))}/100 puntos</p>
@@ -428,7 +428,7 @@ const RatingGame = ({
                   }}
                 />
                 <div className={`w-full h-full ${selectedFriend.color} rounded-full flex items-center justify-center ${selectedFriend.photo ? 'hidden' : 'flex'}`}>
-                  {React.createElement(selectedFriend.icon, { className: "w-10 h-10 text-white" })}
+                  {selectedFriend.icon && typeof selectedFriend.icon === 'function' ? React.createElement(selectedFriend.icon, { className: "w-10 h-10 text-white" }) : <span className="text-white text-lg font-bold">{selectedFriend.name ? selectedFriend.name.charAt(0).toUpperCase() : '?'}</span>}
                 </div>
                 {/* Speaker button */}
                 <button
@@ -512,7 +512,7 @@ const RatingGame = ({
         style={{ display: 'none' }}
       />
 
-      <style jsx>{`
+      <style>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           width: 24px;

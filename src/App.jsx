@@ -93,6 +93,32 @@ const BirthdayGame = () => {
             console.error('Error silencioso en checkAllMessagesSubmitted:', error);
             // No mostrar error al usuario
           });
+        } else if (gameState === 'playing' && playerMessages.length === 0) {
+          // Si estamos en playing pero no hay mensajes, intentar obtenerlos
+          getPlayerMessages().catch(error => {
+            console.error('Error obteniendo mensajes en playing:', error);
+          });
+        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length === 0) {
+          // Si estamos en playing con mensajes pero friends está vacío, usar los mensajes como friends
+          console.log('Actualizando friends con playerMessages:', playerMessages);
+          setFriends(playerMessages);
+        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0 && friends[0].message !== playerMessages[0]?.message) {
+          // Si los mensajes han cambiado, actualizar friends
+          console.log('Actualizando friends porque los mensajes cambiaron');
+          setFriends(playerMessages);
+        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0 && friends.length !== playerMessages.length) {
+          // Si el número de mensajes cambió, actualizar friends
+          console.log('Actualizando friends porque cambió el número de mensajes');
+          setFriends(playerMessages);
+        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0) {
+          // Verificar si algún mensaje cambió
+          const messagesChanged = playerMessages.some((msg, index) => {
+            return !friends[index] || friends[index].message !== msg.message;
+          });
+          if (messagesChanged) {
+            console.log('Actualizando friends porque algún mensaje cambió');
+            setFriends(playerMessages);
+          }
         }
       }, 2000);
 
@@ -1328,6 +1354,31 @@ const BirthdayGame = () => {
 
   // Multiplayer game playing
   if (isMultiplayer && gameState === 'playing') {
+    // Si no hay mensajes de jugadores, mostrar pantalla de espera
+    if (!playerMessages || playerMessages.length === 0) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center p-4">
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-12 shadow-2xl max-w-2xl w-full">
+            <div className="text-center mb-8">
+              <Award className="w-20 h-20 mx-auto mb-4 text-white" />
+              <h2 className="text-4xl font-bold text-white mb-4">Cargando mensajes...</h2>
+              <p className="text-xl text-white/80">Esperando que se carguen los mensajes de los jugadores</p>
+            </div>
+
+            <div className="text-center">
+              <button
+                onClick={resetGame}
+                className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300"
+              >
+                <RotateCcw className="w-5 h-5 inline mr-2" />
+                Volver
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <>
         <RatingGame
