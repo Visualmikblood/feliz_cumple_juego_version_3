@@ -135,13 +135,54 @@ try {
                 throw new Exception('Método no permitido');
             }
             $stmt = $pdo->prepare("
-                SELECT friend_id as id, name, message, color_class, icon_name, photo_url 
-                FROM congratulation_messages 
+                SELECT friend_id as id, name, message, color_class, icon_name, photo_url
+                FROM congratulation_messages
                 ORDER BY friend_id
             ");
             $stmt->execute();
             $messages = $stmt->fetchAll();
             $result = ['success' => true, 'data' => $messages];
+            break;
+
+        // === RUTAS DE MENSAJES DE JUGADORES ===
+        case 'player-messages/save':
+            if ($method !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+            try {
+                $stmt = $pdo->prepare("
+                    INSERT INTO player_messages (room_id, player_id, message)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt->execute([
+                    $input['roomId'] ?? 0,
+                    $input['playerId'] ?? 0,
+                    $input['message'] ?? ''
+                ]);
+                $result = ['success' => true, 'message' => 'Mensaje guardado correctamente'];
+            } catch (Exception $e) {
+                $result = ['success' => false, 'error' => $e->getMessage()];
+            }
+            break;
+
+        case 'player-messages/get':
+            if ($method !== 'GET') {
+                throw new Exception('Método no permitido');
+            }
+            try {
+                $stmt = $pdo->prepare("
+                    SELECT pm.id, pm.message, pm.created_at, p.name as player_name, p.profile_photo
+                    FROM player_messages pm
+                    JOIN players p ON pm.player_id = p.id
+                    WHERE pm.room_id = ?
+                    ORDER BY pm.created_at
+                ");
+                $stmt->execute([$_GET['roomId'] ?? 0]);
+                $messages = $stmt->fetchAll();
+                $result = ['success' => true, 'data' => $messages];
+            } catch (Exception $e) {
+                $result = ['success' => false, 'error' => $e->getMessage()];
+            }
             break;
             
         // === RUTAS DE ESTADO ===

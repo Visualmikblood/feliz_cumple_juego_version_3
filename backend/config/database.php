@@ -41,6 +41,23 @@ try {
 
     // Asegurar que estamos en la base de datos correcta
     $pdo->exec("USE {$config['dbname']}");
+
+    // Verificar que la tabla player_messages existe, si no, crearla
+    try {
+        $stmt = $pdo->query("SELECT 1 FROM player_messages LIMIT 1");
+    } catch (PDOException $e) {
+        // Crear tabla si no existe
+        $pdo->exec("CREATE TABLE IF NOT EXISTS player_messages (
+            id int(11) NOT NULL AUTO_INCREMENT,
+            room_id int(11) NOT NULL,
+            player_id int(11) NOT NULL,
+            message text NOT NULL,
+            created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY room_id (room_id),
+            KEY player_id (player_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    }
 } catch (PDOException $e) {
     throw new PDOException($e->getMessage(), (int)$e->getCode());
 }

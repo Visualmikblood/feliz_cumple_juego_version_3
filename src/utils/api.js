@@ -162,6 +162,28 @@ export const messagesAPI = {
 };
 
 /**
+ * API de mensajes de jugadores
+ */
+export const playerMessagesAPI = {
+    // Guardar mensaje de jugador
+    save: async (roomId, playerId, message) => {
+        return apiRequest('player-messages/save', {
+            method: 'POST',
+            body: JSON.stringify({
+                roomId,
+                playerId,
+                message
+            })
+        });
+    },
+
+    // Obtener mensajes de jugadores en una sala
+    getByRoom: async (roomId) => {
+        return apiRequest(`player-messages/get&roomId=${roomId}`);
+    }
+};
+
+/**
  * Hook personalizado para polling de notificaciones
  */
 export const useNotificationPolling = (roomId, callback, interval = 5000) => {

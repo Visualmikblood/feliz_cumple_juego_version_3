@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award, Users, Crown, TrendingDown } from 'lucide-react';
+import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award, Users, Crown, TrendingDown, CheckCircle } from 'lucide-react';
 import PointsGame from './PointsGame';
 import RatingGame from './RatingGame';
 import MultiplayerResults from './components/MultiplayerResults';
 import NotificationSystem, { useNotifications } from './components/NotificationSystem';
-import { roomsAPI, ratingsAPI, notificationsAPI, sessionStorage, validators, handleApiError, useNotificationPolling } from './utils/api';
+import { roomsAPI, ratingsAPI, notificationsAPI, sessionStorage, validators, handleApiError, useNotificationPolling, playerMessagesAPI } from './utils/api';
 
 const BirthdayGame = () => {
   const [gameMode, setGameMode] = useState(null); // 'points', 'rating', or 'multiplayer'
@@ -32,7 +32,7 @@ const BirthdayGame = () => {
 
   // Multiplayer specific states
   const [isMultiplayer, setIsMultiplayer] = useState(false);
-  const [gameState, setGameState] = useState('setup'); // 'setup', 'waiting', 'playing', 'results'
+  const [gameState, setGameState] = useState('setup'); // 'setup', 'waiting', 'writing', 'playing', 'results'
   const [gameRoomId, setGameRoomId] = useState('');
   const [playerName, setPlayerName] = useState('');
   const [players, setPlayers] = useState([]);
@@ -49,6 +49,11 @@ const BirthdayGame = () => {
   const [currentComment, setCurrentComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Estados para mensajes personalizados
+  const [playerMessage, setPlayerMessage] = useState('');
+  const [playerMessages, setPlayerMessages] = useState([]);
+  const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
   
   // Sistema de notificaciones
   const { notifications: localNotifications, addNotification, dismissNotification, clearAllNotifications } = useNotifications();
@@ -72,16 +77,23 @@ const BirthdayGame = () => {
     }
   );
 
-  // Polling para actualizar estado del juego cuando está en playing
+  // Polling para actualizar estado del juego cuando está en writing o playing
   const [gameStateInterval, setGameStateInterval] = useState(null);
 
   useEffect(() => {
-    if (isMultiplayer && gameState === 'playing' && roomData?.room?.id) {
+    if (isMultiplayer && (gameState === 'writing' || gameState === 'playing') && roomData?.room?.id) {
       console.log('Iniciando polling de estado del juego cada 2 segundos');
       // Actualizar cada 2 segundos para verificar cambios de estado
       const interval = setInterval(() => {
         console.log('Verificando estado del juego...');
         getRoomInfo(roomData.room.id);
+        if (gameState === 'writing') {
+          // Solo llamar checkAllMessagesSubmitted si no hay errores previos
+          checkAllMessagesSubmitted().catch(error => {
+            console.error('Error silencioso en checkAllMessagesSubmitted:', error);
+            // No mostrar error al usuario
+          });
+        }
       }, 2000);
 
       setGameStateInterval(interval);
@@ -434,10 +446,10 @@ const BirthdayGame = () => {
   const resetGame = () => {
     // Detener polling de notificaciones
     notificationPolling.stopPolling();
-    
+
     // Limpiar sesión
     sessionStorage.clearPlayerSession();
-    
+
     setGameMode(null);
     setIsMultiplayer(false);
     setGameState('setup');
@@ -473,6 +485,11 @@ const BirthdayGame = () => {
     setShowAvailableRooms(false);
     setLoading(false);
     setError(null);
+
+    // Limpiar estados de mensajes personalizados
+    setPlayerMessage('');
+    setPlayerMessages([]);
+    setHasSubmittedMessage(false);
   };
 
   const shareMessage = () => {
@@ -600,20 +617,20 @@ const BirthdayGame = () => {
       setError('Solo el host puede iniciar el juego');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await roomsAPI.start(roomData.room.id, currentPlayerId);
-      
+
       if (response.success) {
-        setGameState('playing');
+        setGameState('writing');
         setGameStarted(true);
         generateConfetti(80);
-        
+
         // Iniciar polling de notificaciones
-        notificationPolling.startPolling();
+        // notificationPolling.startPolling(); // Desactivado temporalmente por errores
       } else {
         setError(handleApiError(response));
       }
@@ -638,9 +655,9 @@ const BirthdayGame = () => {
         setPlayers(newRoomData.players);
 
         // Si el estado de la sala cambió, actualizar el estado del juego
-        if (newRoomData.room.status === 'playing' && gameState !== 'playing') {
-          console.log('Cambiando estado a playing');
-          setGameState('playing');
+        if (newRoomData.room.status === 'playing' && gameState !== 'playing' && gameState !== 'writing') {
+          console.log('Cambiando estado a writing');
+          setGameState('writing');
           setGameStarted(true);
           notificationPolling.startPolling();
         } else if (newRoomData.room.status === 'finished' && gameState !== 'results') {
@@ -674,6 +691,98 @@ const BirthdayGame = () => {
     }
   };
 
+  // Función para guardar mensaje personalizado
+  const savePlayerMessage = async () => {
+    if (!playerMessage.trim()) {
+      setError('Por favor escribe un mensaje');
+      return false;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await playerMessagesAPI.save(roomData.room.id, currentPlayerId, playerMessage.trim());
+
+      if (response.success) {
+        setHasSubmittedMessage(true);
+        generateConfetti(30);
+
+        // Verificar si todos han enviado sus mensajes
+        await checkAllMessagesSubmitted();
+        return true;
+      } else {
+        setError(handleApiError(response));
+        return false;
+      }
+    } catch (error) {
+      setError(handleApiError(error, 'Error al guardar mensaje'));
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para verificar si todos han enviado mensajes
+  const checkAllMessagesSubmitted = async () => {
+    try {
+      const messagesResponse = await playerMessagesAPI.getByRoom(roomData.room.id);
+      if (messagesResponse.success) {
+        const submittedCount = messagesResponse.data.length;
+        const totalPlayers = players.length;
+
+        console.log(`${submittedCount}/${totalPlayers} mensajes enviados`);
+
+        if (submittedCount >= totalPlayers && isHost) {
+          // Todos han enviado mensajes, pasar a calificación
+          setGameState('playing');
+          await getPlayerMessages();
+        }
+      } else {
+        console.error('Error en respuesta de API:', messagesResponse.error);
+        // No mostrar error al usuario si es por tabla faltante
+        const isDatabaseError = messagesResponse.error?.includes('player_messages') ||
+                               messagesResponse.error?.includes('Base table or view not found') ||
+                               messagesResponse.error?.includes('Table') ||
+                               messagesResponse.error?.includes('SQLSTATE') ||
+                               messagesResponse.error?.includes('1146') ||
+                               messagesResponse.error?.includes('birthday_game') ||
+                               messagesResponse.error?.includes('does not exist');
+
+        if (!isDatabaseError) {
+          setError('Error al verificar mensajes enviados');
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar mensajes:', error);
+      // No mostrar error al usuario si es por tabla faltante
+      const isDatabaseError = error.message?.includes('player_messages') ||
+                             error.message?.includes('Base table or view not found') ||
+                             error.message?.includes('Table') ||
+                             error.message?.includes('SQLSTATE') ||
+                             error.message?.includes('1146') ||
+                             error.message?.includes('birthday_game') ||
+                             error.message?.includes('does not exist');
+
+      if (!isDatabaseError) {
+        setError('Error al verificar mensajes enviados');
+      }
+    }
+  };
+
+  // Función para obtener mensajes de jugadores
+  const getPlayerMessages = async () => {
+    try {
+      const response = await playerMessagesAPI.getByRoom(roomData.room.id);
+      if (response.success) {
+        setPlayerMessages(response.data);
+        console.log('Mensajes de jugadores obtenidos:', response.data.length);
+      }
+    } catch (error) {
+      console.error('Error al obtener mensajes de jugadores:', error);
+    }
+  };
+
   // Función para guardar calificación multijugador
   const saveMultiplayerRating = async (messageId, rating, comment) => {
     try {
@@ -684,7 +793,7 @@ const BirthdayGame = () => {
         rating,
         comment
       );
-      
+
       if (!response.success) {
         setError(handleApiError(response));
         return false;
@@ -729,25 +838,35 @@ const BirthdayGame = () => {
   const getMultiplayerResults = async () => {
     try {
       const response = await ratingsAPI.getResults(roomData.room.id);
-      
+
       if (response.success) {
         const results = response.data;
-        
+
         // Transformar datos para el formato esperado por el frontend
         const friendAverages = results.message_averages;
-        const bestFriend = friends.find(f => f.id === results.best_message_id);
-        const worstFriend = friends.find(f => f.id === results.worst_message_id);
-        
+
+        // Encontrar mejor y peor mensaje usando los mensajes personalizados
+        const bestMessage = playerMessages.find(m => m.id === results.best_message_id);
+        const worstMessage = playerMessages.find(m => m.id === results.worst_message_id);
+
         setMultiplayerResults({
           ...results,
           friendAverages,
-          bestFriend,
-          worstFriend
+          bestFriend: bestMessage ? {
+            id: bestMessage.id,
+            name: bestMessage.player_name,
+            message: bestMessage.message
+          } : null,
+          worstFriend: worstMessage ? {
+            id: worstMessage.id,
+            name: worstMessage.player_name,
+            message: worstMessage.message
+          } : null
         });
-        
+
         setAllPlayersRatings(results.player_ratings);
         setGameState('results');
-        
+
         // Detener polling
         notificationPolling.stopPolling();
       }
@@ -1127,12 +1246,92 @@ const BirthdayGame = () => {
     );
   }
 
+  // Multiplayer writing phase
+  if (isMultiplayer && gameState === 'writing') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center p-4">
+        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-12 shadow-2xl max-w-4xl w-full">
+          <div className="text-center mb-8">
+            <Heart className="w-20 h-20 mx-auto mb-4 text-white" />
+            <h2 className="text-4xl font-bold text-white mb-4">¡Escribe tu mensaje de felicitación!</h2>
+            <p className="text-xl text-white/80">Los demás jugadores calificarán tu mensaje</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-4">
+              <p className="text-red-200 text-center font-semibold">{error}</p>
+            </div>
+          )}
+
+          {hasSubmittedMessage ? (
+            <div className="text-center space-y-6">
+              <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-6">
+                <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-300" />
+                <h3 className="text-2xl font-bold text-white mb-2">¡Mensaje enviado!</h3>
+                <p className="text-white/80">Esperando que todos terminen de escribir...</p>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="text-white text-lg">Tu mensaje:</p>
+                <p className="text-white/90 mt-2 p-4 bg-white/10 rounded-lg italic">"{playerMessage}"</p>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-4">
+                <p className="text-white text-lg">Esperando a {players.length - (playerMessages.length + (hasSubmittedMessage ? 1 : 0))} jugador(es)...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-white text-lg font-semibold mb-2">
+                  Tu mensaje de felicitación para Miguel:
+                </label>
+                <textarea
+                  value={playerMessage}
+                  onChange={(e) => setPlayerMessage(e.target.value)}
+                  placeholder="Escribe un mensaje bonito y original de felicitación..."
+                  className="w-full px-4 py-4 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors resize-none"
+                  rows={6}
+                  maxLength={500}
+                />
+                <p className="text-white/70 text-sm mt-2 text-right">
+                  {playerMessage.length}/500 caracteres
+                </p>
+              </div>
+
+              <div className="text-center">
+                <button
+                  onClick={savePlayerMessage}
+                  disabled={!playerMessage.trim() || loading}
+                  className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+                >
+                  {loading ? 'Enviando...' : 'Enviar Mensaje'}
+                  <Heart className="w-5 h-5 inline ml-2" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center mt-8">
+            <button
+              onClick={resetGame}
+              className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300"
+            >
+              <RotateCcw className="w-5 h-5 inline mr-2" />
+              Salir de la Sala
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Multiplayer game playing
   if (isMultiplayer && gameState === 'playing') {
     return (
       <>
         <RatingGame
-          friends={friends}
+          friends={playerMessages}
           clickedBalls={clickedBalls}
           setClickedBalls={setClickedBalls}
           showMessage={showMessage}
@@ -1179,7 +1378,7 @@ const BirthdayGame = () => {
           notifications={notifications}
           loading={loading}
         />
-        
+
         <NotificationSystem
           notifications={localNotifications}
           onDismiss={dismissNotification}
