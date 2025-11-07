@@ -31,7 +31,7 @@ const RatingModal = ({
               }}
             />
             <div className={`w-16 h-16 ${selectedFriend.color} rounded-full flex items-center justify-center border-4 border-white shadow-lg`}>
-              {React.createElement(selectedFriend.icon, { className: "w-8 h-8 text-white" })}
+              {selectedFriend.icon && typeof selectedFriend.icon === 'function' ? React.createElement(selectedFriend.icon, { className: "w-8 h-8 text-white" }) : <span className="text-white text-lg font-bold">{selectedFriend.name ? selectedFriend.name.charAt(0).toUpperCase() : '?'}</span>}
             </div>
             <div>
               <h3 className="text-2xl font-bold text-gray-800">{selectedFriend.name}</h3>

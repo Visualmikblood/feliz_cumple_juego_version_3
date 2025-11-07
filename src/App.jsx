@@ -98,27 +98,10 @@ const BirthdayGame = () => {
           getPlayerMessages().catch(error => {
             console.error('Error obteniendo mensajes en playing:', error);
           });
-        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length === 0) {
-          // Si estamos en playing con mensajes pero friends está vacío, usar los mensajes como friends
+        } else if (gameState === 'playing' && playerMessages.length > 0) {
+          // Si estamos en playing con mensajes, usar los mensajes como friends
           console.log('Actualizando friends con playerMessages:', playerMessages);
           setFriends(playerMessages);
-        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0 && friends[0].message !== playerMessages[0]?.message) {
-          // Si los mensajes han cambiado, actualizar friends
-          console.log('Actualizando friends porque los mensajes cambiaron');
-          setFriends(playerMessages);
-        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0 && friends.length !== playerMessages.length) {
-          // Si el número de mensajes cambió, actualizar friends
-          console.log('Actualizando friends porque cambió el número de mensajes');
-          setFriends(playerMessages);
-        } else if (gameState === 'playing' && playerMessages.length > 0 && friends.length > 0) {
-          // Verificar si algún mensaje cambió
-          const messagesChanged = playerMessages.some((msg, index) => {
-            return !friends[index] || friends[index].message !== msg.message;
-          });
-          if (messagesChanged) {
-            console.log('Actualizando friends porque algún mensaje cambió');
-            setFriends(playerMessages);
-          }
         }
       }, 2000);
 
