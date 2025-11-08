@@ -221,12 +221,13 @@ export const useNotificationPolling = (roomId, callback, interval = 5000) => {
  */
 export const sessionStorage = {
     // Guardar datos de sesión del jugador
-    savePlayerSession: (roomId, playerId, sessionId, playerName) => {
+    savePlayerSession: (roomId, playerId, sessionId, playerName, roomCode = null) => {
         const sessionData = {
             roomId,
             playerId,
             sessionId,
             playerName,
+            roomCode,
             timestamp: Date.now()
         };
         localStorage.setItem('birthday_game_session', JSON.stringify(sessionData));

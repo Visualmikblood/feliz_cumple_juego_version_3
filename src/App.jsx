@@ -152,6 +152,19 @@ const BirthdayGame = () => {
     }
   }, [isMultiplayer, gameState, roomData?.room?.id]);
 
+  // Verificar sesión existente al cargar la app - solo si hay parámetros en la URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+    if (roomCode) {
+      // Si hay un código de sala en la URL, intentar unirse automáticamente
+      setGameMode('multiplayer');
+      setIsMultiplayer(true);
+      setGameRoomId(roomCode);
+      // El resto se manejará en el componente de setup
+    }
+  }, []);
+
   // Function to handle speech synthesis
   const toggleSpeech = (text) => {
     if (!window.speechSynthesis) {
@@ -597,32 +610,35 @@ const BirthdayGame = () => {
       setError('Por favor ingresa un nombre válido (2-50 caracteres)');
       return;
     }
-    
+
     if (!validators.roomCode(gameRoomId)) {
       setError('Por favor ingresa un código de sala válido (6 caracteres)');
       return;
     }
-    
+
+    // Limpiar cualquier sesión existente antes de unirse
+    sessionStorage.clearPlayerSession();
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await roomsAPI.join(gameRoomId, playerName, null);
-      
+
       if (response.success) {
         const { room_id, player_id, session_id, status } = response.data;
-        
+
         setCurrentPlayerId(player_id);
         setSessionId(session_id);
         setIsHost(false);
         setGameState(status === 'playing' ? 'playing' : 'waiting');
-        
+
         // Guardar sesión
-        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName);
-        
+        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, gameRoomId);
+
         // Obtener información de la sala
         await getRoomInfo(room_id);
-        
+
         generateConfetti(30);
       } else {
         setError(handleApiError(response));
@@ -734,7 +750,7 @@ const BirthdayGame = () => {
         setGameState(status === 'playing' ? 'playing' : status === 'finished' ? 'results' : 'waiting');
 
         // Guardar sesión
-        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName);
+        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, room_code);
 
         // Obtener información de la sala
         await getRoomInfo(room_id);
@@ -757,6 +773,55 @@ const BirthdayGame = () => {
       setError(handleApiError(error, 'Error al volver a entrar a la sala'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para verificar sesión existente al cargar la app
+  const checkExistingSession = async () => {
+    try {
+      const session = sessionStorage.getPlayerSession();
+      if (session && session.roomId && session.playerId && session.sessionId) {
+        console.log('Sesión existente encontrada:', session);
+
+        // Verificar que la sala aún existe
+        const roomInfoResponse = await fetch(`http://localhost:8000/api/index.php?path=rooms/info&roomId=${session.roomId}`);
+        const roomInfo = await roomInfoResponse.json();
+
+        if (roomInfo.success) {
+          console.log('Sala aún existe, restaurando sesión');
+
+          // Restaurar estado
+          setGameMode('multiplayer');
+          setIsMultiplayer(true);
+          setGameRoomId(session.roomCode || '');
+          setPlayerName(session.playerName || '');
+          setCurrentPlayerId(session.playerId);
+          setSessionId(session.sessionId);
+
+          // Obtener información actual de la sala
+          await getRoomInfo(session.roomId);
+
+          // Determinar estado basado en la información de la sala
+          const roomStatus = roomInfo.data.room.status;
+          if (roomStatus === 'finished') {
+            setGameState('results');
+            await getMultiplayerResults();
+          } else if (roomStatus === 'playing') {
+            setGameState('playing');
+            await getPlayerMessages();
+          } else {
+            setGameState('waiting');
+          }
+
+          console.log('Sesión restaurada exitosamente');
+        } else {
+          console.log('Sala ya no existe, limpiando sesión');
+          sessionStorage.clearPlayerSession();
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar sesión existente:', error);
+      sessionStorage.clearPlayerSession();
     }
   };
 
@@ -1334,7 +1399,7 @@ const BirthdayGame = () => {
 
             <button
               onClick={resetGame}
-              className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300"
+              className="bg-red-500/20 hover:bg-red-500/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300 border border-red-500/30"
             >
               <RotateCcw className="w-5 h-5 inline mr-2" />
               Salir de la Sala
@@ -1414,7 +1479,7 @@ const BirthdayGame = () => {
           <div className="text-center mt-8">
             <button
               onClick={resetGame}
-              className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300"
+              className="bg-red-500/20 hover:bg-red-500/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300 border border-red-500/30"
             >
               <RotateCcw className="w-5 h-5 inline mr-2" />
               Salir de la Sala
