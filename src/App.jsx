@@ -748,22 +748,48 @@ const BirthdayGame = () => {
         setCurrentPlayerId(existingPlayer.id);
         setSessionId(existingPlayer.session_id || 'restored');
         setIsHost(existingPlayer.is_host === 1);
-        setGameState(roomInfo.data.room.status === 'playing' ? 'playing' :
-                    roomInfo.data.room.status === 'finished' ? 'results' : 'waiting');
+
+        // Determinar el estado correcto basado en el estado de la sala y si el jugador ya envió mensaje
+        let correctGameState = 'waiting';
+        if (roomInfo.data.room.status === 'finished') {
+          correctGameState = 'results';
+        } else if (roomInfo.data.room.status === 'playing') {
+          // Verificar si el jugador ya envió su mensaje
+          try {
+            const messagesResponse = await fetch(`http://localhost:8000/api/index.php?path=player-messages/get&roomId=${roomInfo.data.room.id}`);
+            const messagesData = await messagesResponse.json();
+            if (messagesData.success) {
+              const playerMessage = messagesData.data.find(m => m.player_name === playerName);
+              if (playerMessage) {
+                // Jugador ya envió mensaje - ir directamente a calificar
+                correctGameState = 'playing';
+                setHasSubmittedMessage(true);
+                setPlayerMessages(messagesData.data);
+                setGameStarted(true);
+                setRoomData(roomInfo.data);
+                setPlayers(roomInfo.data.players);
+              } else {
+                correctGameState = 'writing';
+              }
+            }
+          } catch (error) {
+            console.error('Error verificando mensajes del jugador:', error);
+            correctGameState = 'playing'; // fallback
+          }
+        }
+
+        setGameState(correctGameState);
 
         // Guardar sesión restaurada
         sessionStorage.savePlayerSession(roomInfo.data.room.id, existingPlayer.id, existingPlayer.session_id || 'restored', playerName, roomCode);
 
-        // Obtener información de la sala
-        await getRoomInfo(roomInfo.data.room.id);
-
-        // Si estamos en playing, obtener mensajes
-        if (roomInfo.data.room.status === 'playing') {
-          await getPlayerMessages();
+        // Solo obtener información adicional si no estamos en playing (ya tenemos los datos)
+        if (correctGameState !== 'playing') {
+          await getRoomInfo(roomInfo.data.room.id);
         }
 
         // Si estamos en results, obtener resultados
-        if (roomInfo.data.room.status === 'finished') {
+        if (correctGameState === 'results') {
           await getMultiplayerResults();
         }
 
