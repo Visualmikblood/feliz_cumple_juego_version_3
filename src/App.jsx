@@ -98,8 +98,8 @@ const BirthdayGame = () => {
             console.error('Error silencioso en checkAllMessagesSubmitted:', error);
             // No mostrar error al usuario
           });
-        } else if (gameState === 'playing' && playerMessages.length === 0) {
-          // Si estamos en playing pero no hay mensajes, intentar obtenerlos
+        } else if (gameState === 'playing') {
+          // Siempre obtener mensajes actualizados en playing para asegurar sincronización
           getPlayerMessages().catch(error => {
             console.error('Error obteniendo mensajes en playing:', error);
           });
@@ -125,7 +125,7 @@ const BirthdayGame = () => {
   const [roomUpdateInterval, setRoomUpdateInterval] = useState(null);
 
   useEffect(() => {
-    if (isMultiplayer && gameState === 'waiting' && roomData?.room?.id) {
+    if (isMultiplayer && (gameState === 'waiting' || gameState === 'writing' || gameState === 'playing') && roomData?.room?.id) {
       console.log('Iniciando polling de sala cada 3 segundos');
       // Actualizar cada 3 segundos
       const interval = setInterval(() => {
