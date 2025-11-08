@@ -55,13 +55,13 @@ const apiRequest = async (endpoint, options = {}) => {
  */
 export const roomsAPI = {
     // Crear nueva sala
-    create: async (playerName, profilePhoto = null, timeLimitHours = 72) => {
+    create: async (playerName, profilePhoto = null, deadlineDateTime = null) => {
         return apiRequest('rooms/create', {
             method: 'POST',
             body: JSON.stringify({
                 playerName,
                 profilePhoto,
-                timeLimitHours
+                deadlineDateTime
             })
         });
     },
@@ -97,6 +97,18 @@ export const roomsAPI = {
     // Obtener salas disponibles
     getAvailable: async () => {
         return apiRequest('rooms/available');
+    },
+
+    // Actualizar fecha límite de sala
+    updateDeadline: async (roomId, playerId, newDeadline) => {
+        return apiRequest('rooms/update-deadline', {
+            method: 'POST',
+            body: JSON.stringify({
+                roomId,
+                playerId,
+                newDeadline
+            })
+        });
     }
 };
 
@@ -146,8 +158,8 @@ export const notificationsAPI = {
 
     // Obtener notificaciones no leídas
     getUnread: async (roomId, since = null) => {
-        const sinceParam = since ? `&since=${encodeURIComponent(since)}` : '';
-        return apiRequest(`notifications/unread?roomId=${roomId}${sinceParam}`);
+        // Endpoint no implementado, devolver vacío silenciosamente
+        return { success: true, data: [] };
     }
 };
 

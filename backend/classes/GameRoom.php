@@ -13,19 +13,29 @@ class GameRoom {
     /**
      * Crear una nueva sala de juego
      */
-    public function createRoom($hostName, $profilePhoto = null, $timeLimitHours = 72) {
+    public function createRoom($hostName, $profilePhoto = null, $deadlineDateTime = null) {
         try {
             $this->pdo->beginTransaction();
-            
+
             // Generar código único para la sala
             $roomCode = $this->generateUniqueRoomCode();
-            
+
+            // Si no se proporciona deadline, usar 1 hora por defecto
+            if (!$deadlineDateTime) {
+                $deadlineDateTime = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            }
+
+            // Calcular horas restantes desde ahora hasta la fecha límite
+            $now = time();
+            $deadline = strtotime($deadlineDateTime);
+            $timeLimitHours = ceil(($deadline - $now) / 3600);
+
             // Crear la sala
             $stmt = $this->pdo->prepare("
-                INSERT INTO game_rooms (room_code, time_limit_hours, created_at, expires_at) 
-                VALUES (?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? HOUR))
+                INSERT INTO game_rooms (room_code, time_limit_hours, created_at, expires_at)
+                VALUES (?, ?, NOW(), ?)
             ");
-            $stmt->execute([$roomCode, $timeLimitHours, $timeLimitHours]);
+            $stmt->execute([$roomCode, $timeLimitHours, $deadlineDateTime]);
             $roomId = $this->pdo->lastInsertId();
             
             // Crear sesión para el host
@@ -59,7 +69,8 @@ class GameRoom {
                     'room_code' => $roomCode,
                     'player_id' => $hostPlayerId,
                     'session_id' => $sessionId,
-                    'expires_at' => date('Y-m-d H:i:s', strtotime("+{$timeLimitHours} hours"))
+                    'expires_at' => date('Y-m-d H:i:s', strtotime("+{$timeLimitHours} hours")),
+                    'deadline' => date('Y-m-d H:i:s', strtotime("+{$timeLimitHours} hours"))
                 ]
             ];
             
@@ -246,12 +257,75 @@ class GameRoom {
     }
     
     /**
+     * Actualizar fecha límite de la sala (solo el host puede hacerlo)
+     */
+    public function updateDeadline($roomId, $playerId, $newDeadline) {
+        try {
+            // Verificar que el jugador es el host
+            $stmt = $this->pdo->prepare("
+                SELECT p.is_host, r.status
+                FROM players p
+                JOIN game_rooms r ON p.room_id = r.id
+                WHERE p.id = ? AND p.room_id = ?
+            ");
+            $stmt->execute([$playerId, $roomId]);
+            $player = $stmt->fetch();
+
+            if (!$player) {
+                return ['success' => false, 'error' => 'Jugador no encontrado'];
+            }
+
+            if (!$player['is_host']) {
+                return ['success' => false, 'error' => 'Solo el host puede cambiar la fecha límite'];
+            }
+
+            // Verificar que la sala está en estado válido
+            if (!in_array($player['status'], ['waiting', 'playing'])) {
+                return ['success' => false, 'error' => 'No se puede cambiar la fecha límite en este estado'];
+            }
+
+            // Validar que la nueva fecha es futura
+            $newDeadlineTime = strtotime($newDeadline);
+            if ($newDeadlineTime <= time()) {
+                return ['success' => false, 'error' => 'La fecha límite debe ser futura'];
+            }
+
+            // Calcular horas restantes
+            $hoursDiff = ceil(($newDeadlineTime - time()) / 3600);
+
+            // Actualizar la fecha límite
+            $stmt = $this->pdo->prepare("
+                UPDATE game_rooms
+                SET time_limit_hours = ?, expires_at = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$hoursDiff, date('Y-m-d H:i:s', $newDeadlineTime), $roomId]);
+
+            // Obtener nombre del host
+            $stmt = $this->pdo->prepare("SELECT name FROM players WHERE id = ?");
+            $stmt->execute([$playerId]);
+            $hostName = $stmt->fetch()['name'];
+
+            // Crear notificación
+            $this->createNotification($roomId, 'deadline_updated',
+                "$hostName ha actualizado la fecha límite a " . date('d/m/Y H:i', $newDeadlineTime),
+                ['new_deadline' => $newDeadline, 'updated_by' => $hostName]
+            );
+
+            return ['success' => true, 'message' => 'Fecha límite actualizada correctamente'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Error al actualizar fecha límite: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Obtener todas las salas disponibles
      */
     public function getAvailableRooms() {
         try {
             $stmt = $this->pdo->prepare("
-                SELECT r.room_code, r.status, r.created_at, r.expires_at, 
+                SELECT r.room_code, r.status, r.created_at, r.expires_at,
                        p.name as host_name,
                        (SELECT COUNT(*) FROM players WHERE room_id = r.id) as player_count
                 FROM game_rooms r
@@ -262,9 +336,9 @@ class GameRoom {
             ");
             $stmt->execute();
             $rooms = $stmt->fetchAll();
-            
+
             return ['success' => true, 'data' => $rooms];
-            
+
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al obtener salas: ' . $e->getMessage()];
         }

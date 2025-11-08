@@ -65,15 +65,20 @@ const RatingGame = ({
 
 
 
-  // Show celebration when deadline expires
+  // Show celebration when deadline expires or all players finished
   useEffect(() => {
-    if (isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) && !showCelebration) {
-      setShowCelebration(true);
-      generateConfetti(100);
-      setMagicMode(true);
-      setTimeout(() => setMagicMode(false), 5000);
+    if (isMultiplayer && !showCelebration) {
+      const deadlineExpired = roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at);
+      const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
+
+      if (deadlineExpired || allPlayersFinished) {
+        setShowCelebration(true);
+        generateConfetti(100);
+        setMagicMode(true);
+        setTimeout(() => setMagicMode(false), 5000);
+      }
     }
-  }, [isMultiplayer, roomData?.room?.expires_at, showCelebration]);
+  }, [isMultiplayer, roomData?.room?.expires_at, players, showCelebration]);
 
   // Estado para el modal de confirmación de salida
   const [showExitModal, setShowExitModal] = useState(false);
@@ -137,9 +142,29 @@ const RatingGame = ({
               {roomData?.room?.expires_at && (
                 <p className="text-sm text-white/70 mb-4">
                   <Clock className="w-4 h-4 inline mr-1" />
-                  Expira: {new Date(roomData.room.expires_at).toLocaleDateString()}
+                  Expira: {new Date(roomData.room.expires_at).toLocaleString()}
                 </p>
               )}
+
+              {/* Mostrar tiempo restante en la pantalla principal */}
+              {isMultiplayer && roomData?.room?.expires_at && (() => {
+                const now = new Date();
+                const deadline = new Date(roomData.room.expires_at);
+                const diff = deadline - now;
+
+                if (diff <= 0) return <p className="text-sm text-red-400 mb-4">⏰ EXPIRADO</p>;
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                if (days > 0) {
+                  return <p className="text-sm text-green-400 mb-4">⏰ Tiempo restante: {days} día{days > 1 ? 's' : ''} {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
+                }
+
+                return <p className="text-sm text-green-400 mb-4">⏰ Tiempo restante: {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
+              })()}
             </>
           ) : (
             <>
@@ -294,15 +319,37 @@ const RatingGame = ({
       </div>
 
             {/* Multijugador: Botón para finalizar calificaciones */}
-     {isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) && (
+     {isMultiplayer && !showCelebration && (
        <div className="max-w-4xl mx-auto text-center mb-8">
          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
-           <h3 className="text-2xl font-bold text-white mb-4">
-             ¡Se ha agotado el tiempo para calificar!
-           </h3>
-           <p className="text-white/80 mb-6">
-             La fecha límite ha expirado. Haz clic en el botón para enviar tus calificaciones y ver los resultados.
-           </p>
+           {roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) ? (
+             <>
+               <h3 className="text-2xl font-bold text-white mb-4">
+                 ¡Se ha agotado el tiempo para calificar!
+               </h3>
+               <p className="text-white/80 mb-6">
+                 La fecha límite ha expirado. Haz clic en el botón para enviar tus calificaciones y ver los resultados.
+               </p>
+             </>
+           ) : players.length > 0 && players.every(p => p.has_finished_rating) ? (
+             <>
+               <h3 className="text-2xl font-bold text-white mb-4">
+                 ¡Todos los jugadores han terminado!
+               </h3>
+               <p className="text-white/80 mb-6">
+                 Todos los participantes han completado sus calificaciones. Haz clic en el botón para ver los resultados finales.
+               </p>
+             </>
+           ) : (
+             <>
+               <h3 className="text-2xl font-bold text-white mb-4">
+                 ¿Listo para finalizar?
+               </h3>
+               <p className="text-white/80 mb-6">
+                 Si has terminado de calificar todos los mensajes, puedes enviar tus calificaciones ahora.
+               </p>
+             </>
+           )}
            <button
              onClick={submitPlayerRatings}
              disabled={loading}

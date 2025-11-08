@@ -45,9 +45,10 @@ const BirthdayGame = () => {
   const [notifications, setNotifications] = useState([]);
   const [deadlineDateTime, setDeadlineDateTime] = useState(() => {
     const now = new Date();
-    now.setHours(now.getHours() + 72); // 72 horas por defecto
+    now.setHours(now.getHours() + 1); // 1 hora por defecto
     return now.toISOString().slice(0, 16);
   });
+  const [timeRemaining, setTimeRemaining] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [showAvailableRooms, setShowAvailableRooms] = useState(false);
   const [currentComment, setCurrentComment] = useState('');
@@ -82,6 +83,41 @@ const BirthdayGame = () => {
     }
   );
 
+  // Función para calcular tiempo restante
+  const calculateTimeRemaining = () => {
+    if (!roomData?.room?.expires_at && !roomData?.room?.deadline) return null;
+
+    const now = new Date();
+    const deadline = new Date(roomData.room.expires_at || roomData.room.deadline);
+    const diff = deadline - now;
+
+    if (diff <= 0) return { expired: true, text: 'EXPIRADO' };
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    if (days > 0) {
+      return {
+        expired: false,
+        days,
+        hours,
+        minutes,
+        seconds,
+        text: `${days} día${days > 1 ? 's' : ''} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      };
+    }
+
+    return {
+      expired: false,
+      hours,
+      minutes,
+      seconds,
+      text: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    };
+  };
+
   // Polling para actualizar estado del juego cuando está en writing o playing
   const [gameStateInterval, setGameStateInterval] = useState(null);
 
@@ -103,7 +139,13 @@ const BirthdayGame = () => {
           getPlayerMessages().catch(error => {
             console.error('Error obteniendo mensajes en playing:', error);
           });
+
+          // Verificar si todos los jugadores han terminado sus calificaciones
+          checkIfAllPlayersFinished();
         }
+
+        // Actualizar tiempo restante
+        setTimeRemaining(calculateTimeRemaining());
       }, 2000);
 
       setGameStateInterval(interval);
@@ -131,6 +173,8 @@ const BirthdayGame = () => {
       const interval = setInterval(() => {
         console.log('Actualizando lista de jugadores...');
         getRoomInfo(roomData.room.id);
+        // Actualizar tiempo restante
+        setTimeRemaining(calculateTimeRemaining());
       }, 3000);
 
       setRoomUpdateInterval(interval);
@@ -159,7 +203,23 @@ const BirthdayGame = () => {
       setGameRoomId(roomCode);
       // El resto se manejará en el componente de setup
     }
-  }, []);
+
+    // Verificar si hay salas expiradas cada 30 segundos
+    const checkExpiredRooms = () => {
+      if (isMultiplayer && roomData?.room?.id) {
+        getRoomInfo(roomData.room.id).catch(error => {
+          console.error('Error verificando estado de sala:', error);
+        });
+      }
+    };
+
+    const interval = setInterval(checkExpiredRooms, 30000); // Cada 30 segundos
+
+    // Verificar inmediatamente si la sala ya expiró
+    checkExpiredRooms();
+
+    return () => clearInterval(interval);
+  }, [isMultiplayer, roomData?.room?.id]);
 
   // Function to handle speech synthesis
   const toggleSpeech = (text) => {
@@ -563,32 +623,29 @@ const BirthdayGame = () => {
       setError('Por favor ingresa un nombre válido (2-50 caracteres)');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
-    try {
-      const deadline = new Date(deadlineDateTime);
-      const now = new Date();
-      const hoursDiff = Math.ceil((deadline - now) / (1000 * 60 * 60));
 
-      const response = await roomsAPI.create(playerName, null, hoursDiff);
-      
+    try {
+      // Enviar la fecha completa en formato ISO
+      const response = await roomsAPI.create(playerName, null, deadlineDateTime);
+
       if (response.success) {
         const { room_id, room_code, player_id, session_id } = response.data;
-        
+
         setGameRoomId(room_code);
         setCurrentPlayerId(player_id);
         setSessionId(session_id);
         setIsHost(true);
         setGameState('waiting');
-        
+
         // Guardar sesión
         sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName);
-        
+
         // Obtener información de la sala
         await getRoomInfo(room_id);
-        
+
         generateConfetti(50);
       } else {
         setError(handleApiError(response));
@@ -602,6 +659,8 @@ const BirthdayGame = () => {
 
   // Función para unirse a sala
   const joinRoom = async () => {
+    console.log('Intentando unirse a sala:', gameRoomId, 'con nombre:', playerName);
+
     if (!validators.playerName(playerName)) {
       setError('Por favor ingresa un nombre válido (2-50 caracteres)');
       return;
@@ -619,10 +678,13 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
+      console.log('Llamando a roomsAPI.join...');
       const response = await roomsAPI.join(gameRoomId, playerName, null);
+      console.log('Respuesta de roomsAPI.join:', response);
 
       if (response.success) {
         const { room_id, player_id, session_id, status } = response.data;
+        console.log('Datos de unión exitosa:', { room_id, player_id, session_id, status });
 
         setCurrentPlayerId(player_id);
         setSessionId(session_id);
@@ -633,13 +695,17 @@ const BirthdayGame = () => {
         sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, gameRoomId);
 
         // Obtener información de la sala
+        console.log('Obteniendo información de la sala...');
         await getRoomInfo(room_id);
 
         generateConfetti(30);
+        console.log('Unión a sala completada exitosamente');
       } else {
+        console.error('Error en respuesta de API:', response);
         setError(handleApiError(response));
       }
     } catch (error) {
+      console.error('Error al unirse a la sala:', error);
       setError(handleApiError(error, 'Error al unirse a la sala'));
     } finally {
       setLoading(false);
@@ -696,10 +762,19 @@ const BirthdayGame = () => {
           setGameStarted(true);
           notificationPolling.startPolling();
         } else if (newRoomData.room.status === 'finished' && gameState !== 'results') {
-          console.log('Cambiando estado a results');
+          console.log('Sala terminada, cambiando a results');
           setGameState('results');
           // Obtener resultados finales
           await getMultiplayerResults();
+          // Mostrar notificación de que el juego ha terminado
+          showNotification('¡Todas las calificaciones completadas! Mostrando resultados finales.');
+        } else if (newRoomData.room.status === 'expired' && gameState !== 'results') {
+          console.log('Sala expirada, cambiando a results');
+          setGameState('results');
+          // Obtener resultados finales aunque no todos hayan terminado
+          await getMultiplayerResults();
+          // Mostrar notificación de que la sala ha expirado
+          showNotification('¡La sala ha expirado! Mostrando resultados finales.');
         }
 
         // Si estamos esperando y hay suficientes jugadores, mostrar mensaje
@@ -711,6 +786,34 @@ const BirthdayGame = () => {
       }
     } catch (error) {
       console.error('Error al obtener información de la sala:', error);
+    }
+  };
+
+  // Función para actualizar fecha límite de sala
+  const updateRoomDeadline = async () => {
+    if (!isHost) {
+      setError('Solo el host puede cambiar la fecha límite');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await roomsAPI.updateDeadline(roomData.room.id, currentPlayerId, deadlineDateTime);
+
+      if (response.success) {
+        // Actualizar información de la sala
+        await getRoomInfo(roomData.room.id);
+        generateConfetti(20);
+        showNotification('Fecha límite actualizada correctamente');
+      } else {
+        setError(handleApiError(response));
+      }
+    } catch (error) {
+      setError(handleApiError(error, 'Error al actualizar fecha límite'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1040,29 +1143,56 @@ const BirthdayGame = () => {
     }
   };
 
+  // Función para verificar si todos los jugadores han terminado
+  const checkIfAllPlayersFinished = async () => {
+    try {
+      // Obtener información actualizada de la sala
+      const response = await roomsAPI.getInfo(roomData.room.id);
+      if (response.success) {
+        const roomInfo = response.data;
+        const totalPlayers = roomInfo.players.length;
+        const finishedPlayers = roomInfo.players.filter(p => p.finished_ratings).length;
+
+        console.log(`${finishedPlayers}/${totalPlayers} jugadores han terminado`);
+
+        if (finishedPlayers >= totalPlayers && roomInfo.room.status !== 'finished') {
+          console.log('Todos los jugadores han terminado, finalizando sala...');
+          // Marcar la sala como terminada
+          await roomsAPI.finish(roomData.room.id);
+          // Obtener resultados
+          await getMultiplayerResults();
+          showNotification('¡Todas las calificaciones completadas! Mostrando resultados finales.');
+        }
+      }
+    } catch (error) {
+      console.error('Error verificando si todos terminaron:', error);
+    }
+  };
+
   // Función para finalizar calificaciones del jugador
   const submitPlayerRatings = async () => {
+    console.log('Finalizando calificaciones del jugador:', currentPlayerId);
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await ratingsAPI.finish(roomData.room.id, currentPlayerId);
-      
+      console.log('Respuesta de finish ratings:', response);
+
       if (response.success) {
-        // Verificar si todos han terminado
-        await getRoomInfo(roomData.room.id);
-        
-        // Si la sala está terminada, obtener resultados
-        if (roomData.room.status === 'finished') {
-          await getMultiplayerResults();
-        }
-        
+        console.log('Calificaciones finalizadas exitosamente');
+
+        // Verificar inmediatamente si todos han terminado
+        await checkIfAllPlayersFinished();
+
         generateConfetti(100);
         setShowCelebration(true);
       } else {
+        console.error('Error al finalizar calificaciones:', response);
         setError(handleApiError(response));
       }
     } catch (error) {
+      console.error('Error al finalizar calificaciones:', error);
       setError(handleApiError(error, 'Error al finalizar calificaciones'));
     } finally {
       setLoading(false);
@@ -1072,38 +1202,55 @@ const BirthdayGame = () => {
   // Función para obtener resultados multijugador
   const getMultiplayerResults = async () => {
     try {
+      console.log('Obteniendo resultados multijugador para sala:', roomData.room.id);
       const response = await ratingsAPI.getResults(roomData.room.id);
+      console.log('Respuesta de getResults:', response);
 
       if (response.success) {
         const results = response.data;
+        console.log('Datos de resultados:', results);
 
         // Transformar datos para el formato esperado por el frontend
         const friendAverages = results.message_averages;
+        console.log('Promedios de amigos:', friendAverages);
 
         // Encontrar mejor y peor mensaje usando los mensajes personalizados
         const bestMessage = playerMessages.find(m => m.id === results.best_message_id);
         const worstMessage = playerMessages.find(m => m.id === results.worst_message_id);
 
-        setMultiplayerResults({
+        console.log('Mejor mensaje encontrado:', bestMessage);
+        console.log('Peor mensaje encontrado:', worstMessage);
+
+        const resultsData = {
           ...results,
           friendAverages,
           bestFriend: bestMessage ? {
             id: bestMessage.id,
             name: bestMessage.player_name,
-            message: bestMessage.message
+            message: bestMessage.message,
+            color: 'bg-green-400', // Color por defecto
+            icon: Heart, // Icono por defecto
+            photo: `/photos/${bestMessage.player_name.toLowerCase()}.jpg`
           } : null,
           worstFriend: worstMessage ? {
             id: worstMessage.id,
             name: worstMessage.player_name,
-            message: worstMessage.message
+            message: worstMessage.message,
+            color: 'bg-red-400', // Color por defecto
+            icon: Heart, // Icono por defecto
+            photo: `/photos/${worstMessage.player_name.toLowerCase()}.jpg`
           } : null
-        });
+        };
 
+        console.log('Datos finales de resultados:', resultsData);
+        setMultiplayerResults(resultsData);
         setAllPlayersRatings(results.player_ratings);
         setGameState('results');
 
         // Detener polling
         notificationPolling.stopPolling();
+      } else {
+        console.error('Error en respuesta de getResults:', response);
       }
     } catch (error) {
       console.error('Error al obtener resultados:', error);
@@ -1419,15 +1566,36 @@ const BirthdayGame = () => {
                   <label className="block text-white/90 text-sm font-medium">
                     Fecha límite para calificar:
                   </label>
-                  <input
-                    type="datetime-local"
-                    value={deadlineDateTime}
-                    onChange={(e) => setDeadlineDateTime(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors"
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="datetime-local"
+                      value={deadlineDateTime}
+                      onChange={(e) => setDeadlineDateTime(e.target.value)}
+                      className="flex-1 px-3 py-2 rounded-lg text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    {isHost && gameState !== 'setup' && (
+                      <button
+                        onClick={updateRoomDeadline}
+                        disabled={loading}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                      >
+                        {loading ? '...' : 'Actualizar'}
+                      </button>
+                    )}
+                  </div>
                   <p className="text-white/60 text-xs text-center">
                     Los jugadores tendrán hasta esta fecha y hora para calificar todos los mensajes
+                    {isHost && gameState !== 'setup' && (
+                      <span className="block text-yellow-300 mt-1">
+                        Como host, puedes actualizar la fecha límite en cualquier momento
+                      </span>
+                    )}
+                    {timeRemaining && gameState === 'playing' && (
+                      <span className={`block mt-2 text-lg font-bold ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                        ⏰ Tiempo restante: {timeRemaining.text}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
@@ -1498,6 +1666,18 @@ const BirthdayGame = () => {
             )}
 
             <p className="text-white/70 text-sm">Mínimo 2 jugadores requeridos</p>
+
+            {timeRemaining && gameState === 'waiting' && (
+              <div className="bg-white/10 rounded-xl p-4 mb-4">
+                <p className="text-white text-center">
+                  <span className="text-lg font-bold">⏰ Tiempo restante para iniciar:</span>
+                  <br />
+                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                    {timeRemaining.text}
+                  </span>
+                </p>
+              </div>
+            )}
 
             <button
               onClick={resetGame}
@@ -1579,6 +1759,17 @@ const BirthdayGame = () => {
           )}
 
           <div className="text-center mt-8">
+            {timeRemaining && gameState === 'writing' && (
+              <div className="bg-white/10 rounded-xl p-4 mb-4">
+                <p className="text-white text-center">
+                  <span className="text-lg font-bold">⏰ Tiempo restante para escribir:</span>
+                  <br />
+                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                    {timeRemaining.text}
+                  </span>
+                </p>
+              </div>
+            )}
             <button
               onClick={resetGame}
               className="bg-red-500/20 hover:bg-red-500/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300 border border-red-500/30"

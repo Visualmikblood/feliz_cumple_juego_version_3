@@ -42,7 +42,7 @@ try {
             $result = $gameRoom->createRoom(
                 $input['playerName'] ?? '',
                 $input['profilePhoto'] ?? null,
-                $input['timeLimitHours'] ?? 72
+                $input['deadlineDateTime'] ?? null
             );
             break;
             
@@ -79,6 +79,17 @@ try {
                 throw new Exception('Método no permitido');
             }
             $result = $gameRoom->getAvailableRooms();
+            break;
+
+        case 'rooms/update-deadline':
+            if ($method !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+            $result = $gameRoom->updateDeadline(
+                $input['roomId'] ?? 0,
+                $input['playerId'] ?? 0,
+                $input['newDeadline'] ?? ''
+            );
             break;
             
         // === RUTAS DE CALIFICACIONES ===
