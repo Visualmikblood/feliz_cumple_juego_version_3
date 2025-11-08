@@ -1,4 +1,4 @@
-  import React, { useEffect, useRef } from 'react';
+  import React, { useEffect, useRef, useState } from 'react';
 import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award, Users, Clock } from 'lucide-react';
 import RatingModal from './components/RatingModal';
 
@@ -74,6 +74,9 @@ const RatingGame = ({
       setTimeout(() => setMagicMode(false), 5000);
     }
   }, [isMultiplayer, roomData?.room?.expires_at, showCelebration]);
+
+  // Estado para el modal de confirmación de salida
+  const [showExitModal, setShowExitModal] = useState(false);
 
   // Control audio playback
   useEffect(() => {
@@ -219,7 +222,7 @@ const RatingGame = ({
             </button>
 
             <button
-              onClick={resetGame}
+              onClick={() => setShowExitModal(true)}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-300"
               title="Salir de la Sala"
             >
@@ -478,28 +481,63 @@ const RatingGame = ({
       )}
 
             {/* Rating modal */}
-      <RatingModal
-        selectedFriend={selectedFriend}
-        showRatingModal={showRatingModal}
-        setShowRatingModal={setShowRatingModal}
-        currentRating={currentRating}
-        setCurrentRating={setCurrentRating}
-        currentComment={currentComment}
-        setCurrentComment={setCurrentComment}
-        handleRatingSubmit={localHandleRatingSubmit}
-        toggleSpeech={toggleSpeech}
-        isSpeaking={isSpeaking}
-        isMultiplayer={isMultiplayer}
-      />
-
-      {/* Hidden audio element */}
-      <audio
-        ref={audioRef}
-        src="/Parchís - Cumpleaños feliz (128kbit_AAC).mp4"
-        loop
-        preload="auto"
-        style={{ display: 'none' }}
-      />
+            <RatingModal
+              selectedFriend={selectedFriend}
+              showRatingModal={showRatingModal}
+              setShowRatingModal={setShowRatingModal}
+              currentRating={currentRating}
+              setCurrentRating={setCurrentRating}
+              currentComment={currentComment}
+              setCurrentComment={setCurrentComment}
+              handleRatingSubmit={localHandleRatingSubmit}
+              toggleSpeech={toggleSpeech}
+              isSpeaking={isSpeaking}
+              isMultiplayer={isMultiplayer}
+            />
+      
+            {/* Exit confirmation modal */}
+            {showExitModal && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform animate-gentle-bounce">
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                      ¿Salir de la Sala?
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Podrás volver a entrar usando el código de sala: <strong>{roomData?.room?.room_code}</strong>
+                    </p>
+                  </div>
+      
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => {
+                        setShowExitModal(false);
+                        resetGame();
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                    >
+                      Sí, Salir de la Sala
+                    </button>
+      
+                    <button
+                      onClick={() => setShowExitModal(false)}
+                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+      
+            {/* Hidden audio element */}
+            <audio
+              ref={audioRef}
+              src="/Parchís - Cumpleaños feliz (128kbit_AAC).mp4"
+              loop
+              preload="auto"
+              style={{ display: 'none' }}
+            />
 
       <style>{`
         .slider::-webkit-slider-thumb {

@@ -9,6 +9,10 @@ require_once '../classes/GameRoom.php';
 require_once '../classes/Rating.php';
 require_once '../classes/Notification.php';
 
+// Evitar output HTML de errores PHP
+ini_set('display_errors', 0);
+error_reporting(E_ALL);
+
 header('Content-Type: application/json');
 
 // Obtener método HTTP y ruta
@@ -230,6 +234,11 @@ try {
 } catch (Exception $e) {
     http_response_code(400);
     $result = ['success' => false, 'error' => $e->getMessage()];
+}
+
+// Asegurar que solo se envía JSON
+if (!headers_sent()) {
+    header('Content-Type: application/json');
 }
 
 echo json_encode($result);

@@ -725,6 +725,9 @@ const BirthdayGame = () => {
       return;
     }
 
+    // Limpiar cualquier sesión existente antes de volver a entrar
+    sessionStorage.clearPlayerSession();
+
     setLoading(true);
     setError(null);
 
@@ -738,36 +741,65 @@ const BirthdayGame = () => {
         return;
       }
 
-      // Si la sala existe, intentar unirse
-      const response = await roomsAPI.join(roomCode, playerName, null);
+      // Verificar si el jugador ya está en la sala
+      const existingPlayer = roomInfo.data.players.find(p => p.name === playerName);
+      if (existingPlayer) {
+        // Si ya está en la sala, restaurar la sesión directamente
+        setCurrentPlayerId(existingPlayer.id);
+        setSessionId(existingPlayer.session_id || 'restored');
+        setIsHost(existingPlayer.is_host === 1);
+        setGameState(roomInfo.data.room.status === 'playing' ? 'playing' :
+                    roomInfo.data.room.status === 'finished' ? 'results' : 'waiting');
 
-      if (response.success) {
-        const { room_id, player_id, session_id, status } = response.data;
-
-        setCurrentPlayerId(player_id);
-        setSessionId(session_id);
-        setIsHost(false);
-        setGameState(status === 'playing' ? 'playing' : status === 'finished' ? 'results' : 'waiting');
-
-        // Guardar sesión
-        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, room_code);
+        // Guardar sesión restaurada
+        sessionStorage.savePlayerSession(roomInfo.data.room.id, existingPlayer.id, existingPlayer.session_id || 'restored', playerName, roomCode);
 
         // Obtener información de la sala
-        await getRoomInfo(room_id);
+        await getRoomInfo(roomInfo.data.room.id);
 
         // Si estamos en playing, obtener mensajes
-        if (status === 'playing') {
+        if (roomInfo.data.room.status === 'playing') {
           await getPlayerMessages();
         }
 
         // Si estamos en results, obtener resultados
-        if (status === 'finished') {
+        if (roomInfo.data.room.status === 'finished') {
           await getMultiplayerResults();
         }
 
         generateConfetti(30);
       } else {
-        setError(handleApiError(response));
+        // Si no está en la sala, intentar unirse normalmente
+        const response = await roomsAPI.join(roomCode, playerName, null);
+
+        if (response.success) {
+          const { room_id, player_id, session_id, status } = response.data;
+
+          setCurrentPlayerId(player_id);
+          setSessionId(session_id);
+          setIsHost(false);
+          setGameState(status === 'playing' ? 'playing' : status === 'finished' ? 'results' : 'waiting');
+
+          // Guardar sesión
+          sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, roomCode);
+
+          // Obtener información de la sala
+          await getRoomInfo(room_id);
+
+          // Si estamos en playing, obtener mensajes
+          if (status === 'playing') {
+            await getPlayerMessages();
+          }
+
+          // Si estamos en results, obtener resultados
+          if (status === 'finished') {
+            await getMultiplayerResults();
+          }
+
+          generateConfetti(30);
+        } else {
+          setError(handleApiError(response));
+        }
       }
     } catch (error) {
       setError(handleApiError(error, 'Error al volver a entrar a la sala'));
@@ -1289,7 +1321,7 @@ const BirthdayGame = () => {
                   placeholder="CÓDIGO DE SALA"
                   className="w-full px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
                 />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => {
                       console.log('Uniéndose a sala:', gameRoomId, 'con nombre:', playerName);
@@ -1311,6 +1343,19 @@ const BirthdayGame = () => {
                   >
                     <RotateCcw className="w-4 h-4 inline mr-1" />
                     {loading ? '...' : 'Re-entrar'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const confirmExit = window.confirm('¿Estás seguro de que quieres salir de la sala? Se perderá todo el progreso.');
+                      if (confirmExit) {
+                        resetGame();
+                      }
+                    }}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-4 h-4 inline mr-1" />
+                    {loading ? '...' : 'Salir'}
                   </button>
                 </div>
                 <div className="space-y-2">

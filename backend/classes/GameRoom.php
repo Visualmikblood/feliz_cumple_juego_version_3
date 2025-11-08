@@ -76,34 +76,34 @@ class GameRoom {
         try {
             // Verificar que la sala existe y está disponible
             $stmt = $this->pdo->prepare("
-                SELECT id, status, expires_at 
-                FROM game_rooms 
-                WHERE room_code = ? AND status IN ('waiting', 'playing')
+                SELECT id, status, expires_at
+                FROM game_rooms
+                WHERE room_code = ? AND status IN ('waiting', 'playing', 'finished')
             ");
             $stmt->execute([$roomCode]);
             $room = $stmt->fetch();
-            
+
             if (!$room) {
                 return ['success' => false, 'error' => 'Sala no encontrada o no disponible'];
             }
-            
+
             // Verificar que no ha expirado
             if (strtotime($room['expires_at']) < time()) {
                 return ['success' => false, 'error' => 'La sala ha expirado'];
             }
-            
+
             // Verificar que el jugador no esté ya en la sala
             $stmt = $this->pdo->prepare("
-                SELECT id FROM players 
+                SELECT id FROM players
                 WHERE room_id = ? AND name = ?
             ");
             $stmt->execute([$room['id'], $playerName]);
             if ($stmt->fetch()) {
                 return ['success' => false, 'error' => 'Ya existe un jugador con ese nombre en la sala'];
             }
-            
+
             $sessionId = $this->generateSessionId();
-            
+
             // Agregar el jugador
             $stmt = $this->pdo->prepare("
                 INSERT INTO players (room_id, name, profile_photo, session_id)
@@ -111,13 +111,13 @@ class GameRoom {
             ");
             $stmt->execute([$room['id'], $playerName, $profilePhoto ?: null, $sessionId]);
             $playerId = $this->pdo->lastInsertId();
-            
+
             // Crear notificación de jugador unido
             $this->createNotification($room['id'], 'player_joined', "$playerName se ha unido a la sala", [
                 'player_name' => $playerName,
                 'player_id' => $playerId
             ]);
-            
+
             return [
                 'success' => true,
                 'data' => [
@@ -127,7 +127,7 @@ class GameRoom {
                     'status' => $room['status']
                 ]
             ];
-            
+
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al unirse a la sala: ' . $e->getMessage()];
         }
@@ -192,31 +192,46 @@ class GameRoom {
     /**
      * Obtener información de la sala
      */
-    public function getRoomInfo($roomId) {
+    public function getRoomInfo($roomIdentifier) {
         try {
-            $stmt = $this->pdo->prepare("
-                SELECT r.*, p.name as host_name 
-                FROM game_rooms r
-                LEFT JOIN players p ON r.host_player_id = p.id
-                WHERE r.id = ?
-            ");
-            $stmt->execute([$roomId]);
-            $room = $stmt->fetch();
-            
+            // Intentar buscar por ID primero (si es numérico)
+            if (is_numeric($roomIdentifier)) {
+                $stmt = $this->pdo->prepare("
+                    SELECT r.*, p.name as host_name
+                    FROM game_rooms r
+                    LEFT JOIN players p ON r.host_player_id = p.id
+                    WHERE r.id = ?
+                ");
+                $stmt->execute([$roomIdentifier]);
+                $room = $stmt->fetch();
+            }
+
+            // Si no encontró por ID, buscar por código de sala
+            if (!$room) {
+                $stmt = $this->pdo->prepare("
+                    SELECT r.*, p.name as host_name
+                    FROM game_rooms r
+                    LEFT JOIN players p ON r.host_player_id = p.id
+                    WHERE r.room_code = ?
+                ");
+                $stmt->execute([$roomIdentifier]);
+                $room = $stmt->fetch();
+            }
+
             if (!$room) {
                 return ['success' => false, 'error' => 'Sala no encontrada'];
             }
-            
+
             // Obtener jugadores
             $stmt = $this->pdo->prepare("
                 SELECT id, name, profile_photo, is_host, is_ready, has_finished_rating, joined_at
-                FROM players 
-                WHERE room_id = ? 
+                FROM players
+                WHERE room_id = ?
                 ORDER BY is_host DESC, joined_at ASC
             ");
-            $stmt->execute([$roomId]);
+            $stmt->execute([$room['id']]);
             $players = $stmt->fetchAll();
-            
+
             return [
                 'success' => true,
                 'data' => [
@@ -224,7 +239,7 @@ class GameRoom {
                     'players' => $players
                 ]
             ];
-            
+
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al obtener información de la sala: ' . $e->getMessage()];
         }
