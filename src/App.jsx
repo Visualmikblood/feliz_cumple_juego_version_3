@@ -103,10 +103,6 @@ const BirthdayGame = () => {
           getPlayerMessages().catch(error => {
             console.error('Error obteniendo mensajes en playing:', error);
           });
-        } else if (gameState === 'playing' && playerMessages.length > 0) {
-          // Si estamos en playing con mensajes, usar los mensajes como friends
-          console.log('Actualizando friends con playerMessages:', playerMessages);
-          setFriends(playerMessages);
         }
       }, 2000);
 
@@ -768,6 +764,35 @@ const BirthdayGame = () => {
                 setGameStarted(true);
                 setRoomData(roomInfo.data);
                 setPlayers(roomInfo.data.players);
+
+                // Obtener calificaciones existentes del jugador
+                try {
+                  const ratingsResponse = await fetch(`http://localhost:8000/api/index.php?path=ratings/player&roomId=${roomInfo.data.room.id}&playerId=${existingPlayer.id}`);
+                  const ratingsData = await ratingsResponse.json();
+                  console.log('Respuesta de API ratings/player:', ratingsData);
+                  if (ratingsData.success && ratingsData.data && ratingsData.data.length > 0) {
+                    const ratingsMap = {};
+                    const clickedSet = new Set();
+                    ratingsData.data.forEach(rating => {
+                      ratingsMap[rating.message_id] = rating.rating;
+                      clickedSet.add(rating.message_id);
+                    });
+                    console.log('Restaurando calificaciones:', ratingsMap);
+                    console.log('Restaurando bolitas leídas:', clickedSet);
+                    setFriendRatings(ratingsMap);
+                    setClickedBalls(clickedSet);
+                  } else {
+                    console.log('No hay calificaciones previas para restaurar o API devolvió datos vacíos');
+                    // Resetear calificaciones y bolitas leídas si no hay datos previos
+                    setFriendRatings({});
+                    setClickedBalls(new Set());
+                  }
+                } catch (error) {
+                  console.error('Error obteniendo calificaciones existentes:', error);
+                  // Resetear en caso de error
+                  setFriendRatings({});
+                  setClickedBalls(new Set());
+                }
               } else {
                 correctGameState = 'writing';
               }
@@ -989,6 +1014,7 @@ const BirthdayGame = () => {
 
   // Función para guardar calificación multijugador
   const saveMultiplayerRating = async (messageId, rating, comment) => {
+    console.log('Guardando calificación:', { messageId, rating, comment, roomId: roomData.room.id, playerId: currentPlayerId });
     try {
       const response = await ratingsAPI.save(
         roomData.room.id,
@@ -998,12 +1024,17 @@ const BirthdayGame = () => {
         comment
       );
 
+      console.log('Respuesta de guardar calificación:', response);
+
       if (!response.success) {
+        console.error('Error al guardar calificación:', response);
         setError(handleApiError(response));
         return false;
       }
+      console.log('Calificación guardada exitosamente');
       return true;
     } catch (error) {
+      console.error('Error al guardar calificación:', error);
       setError(handleApiError(error, 'Error al guardar calificación'));
       return false;
     }

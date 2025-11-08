@@ -82,6 +82,13 @@ try {
             break;
             
         // === RUTAS DE CALIFICACIONES ===
+        case 'ratings/player':
+            if ($method !== 'GET') {
+                throw new Exception('Método no permitido');
+            }
+            $result = $rating->getPlayerRatings($_GET['roomId'] ?? 0, $_GET['playerId'] ?? 0);
+            break;
+
         case 'ratings/save':
             if ($method !== 'POST') {
                 throw new Exception('Método no permitido');

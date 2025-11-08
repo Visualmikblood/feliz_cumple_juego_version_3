@@ -31,9 +31,13 @@ class Rating {
                 return ['success' => false, 'error' => 'Jugador no autorizado'];
             }
             
-            // Verificar que el mensaje existe
-            $stmt = $this->pdo->prepare("SELECT id FROM congratulation_messages WHERE id = ?");
-            $stmt->execute([$messageId]);
+            // Verificar que el mensaje existe (puede ser de congratulation_messages o player_messages)
+            $stmt = $this->pdo->prepare("
+                SELECT id FROM congratulation_messages WHERE id = ?
+                UNION
+                SELECT id FROM player_messages WHERE id = ?
+            ");
+            $stmt->execute([$messageId, $messageId]);
             if (!$stmt->fetch()) {
                 return ['success' => false, 'error' => 'Mensaje no encontrado'];
             }
@@ -137,17 +141,18 @@ class Rating {
         try {
             $stmt = $this->pdo->prepare("
                 SELECT r.message_id, r.rating, r.comment, r.created_at,
-                       m.name as friend_name
+                       COALESCE(m.name, pm.message) as friend_name
                 FROM ratings r
-                JOIN congratulation_messages m ON r.message_id = m.id
+                LEFT JOIN congratulation_messages m ON r.message_id = m.id
+                LEFT JOIN player_messages pm ON r.message_id = pm.id
                 WHERE r.room_id = ? AND r.player_id = ?
                 ORDER BY r.message_id
             ");
             $stmt->execute([$roomId, $playerId]);
             $ratings = $stmt->fetchAll();
-            
+
             return ['success' => true, 'data' => $ratings];
-            
+
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al obtener calificaciones: ' . $e->getMessage()];
         }
