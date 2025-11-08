@@ -71,7 +71,16 @@ const RatingGame = ({
       const deadlineExpired = roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at);
       const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
 
+      console.log('Checking celebration conditions:', {
+        deadlineExpired,
+        allPlayersFinished,
+        expires_at: roomData?.room?.expires_at,
+        playersCount: players.length,
+        playersFinished: players.filter(p => p.has_finished_rating).length
+      });
+
       if (deadlineExpired || allPlayersFinished) {
+        console.log('Triggering celebration!');
         setShowCelebration(true);
         generateConfetti(100);
         setMagicMode(true);
@@ -330,6 +339,13 @@ const RatingGame = ({
                <p className="text-white/80 mb-6">
                  La fecha límite ha expirado. Haz clic en el botón para enviar tus calificaciones y ver los resultados.
                </p>
+               <button
+                 onClick={submitPlayerRatings}
+                 disabled={loading}
+                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+               >
+                 {loading ? 'Enviando...' : 'Enviar Calificaciones'}
+               </button>
              </>
            ) : players.length > 0 && players.every(p => p.has_finished_rating) ? (
              <>
@@ -339,24 +355,24 @@ const RatingGame = ({
                <p className="text-white/80 mb-6">
                  Todos los participantes han completado sus calificaciones. Haz clic en el botón para ver los resultados finales.
                </p>
+               <button
+                 onClick={submitPlayerRatings}
+                 disabled={loading}
+                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+               >
+                 {loading ? 'Enviando...' : 'Enviar Calificaciones'}
+               </button>
              </>
            ) : (
              <>
                <h3 className="text-2xl font-bold text-white mb-4">
-                 ¿Listo para finalizar?
+                 Calificando mensajes...
                </h3>
                <p className="text-white/80 mb-6">
-                 Si has terminado de calificar todos los mensajes, puedes enviar tus calificaciones ahora.
+                 El botón para enviar calificaciones aparecerá cuando expire el tiempo o todos los jugadores terminen.
                </p>
              </>
            )}
-           <button
-             onClick={submitPlayerRatings}
-             disabled={loading}
-             className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-           >
-             {loading ? 'Enviando...' : 'Enviar Calificaciones'}
-           </button>
          </div>
        </div>
      )}
