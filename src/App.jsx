@@ -53,6 +53,7 @@ const BirthdayGame = () => {
   const [currentComment, setCurrentComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [playerPhoto, setPlayerPhoto] = useState(null);
 
   // Estados para mensajes personalizados
   const [playerMessage, setPlayerMessage] = useState('');
@@ -493,11 +494,16 @@ const BirthdayGame = () => {
     setCurrentComment('');
     setMultiplayerResults(null);
     setNotifications([]);
-    setTimeLimitHours(72);
+    setDeadlineDateTime(() => {
+      const now = new Date();
+      now.setHours(now.getHours() + 72); // 72 horas por defecto
+      return now.toISOString().slice(0, 16);
+    });
     setAvailableRooms([]);
     setShowAvailableRooms(false);
     setLoading(false);
     setError(null);
+    setPlayerPhoto(null);
 
     // Limpiar estados de mensajes personalizados
     setPlayerMessage('');
@@ -601,7 +607,7 @@ const BirthdayGame = () => {
     setError(null);
     
     try {
-      const response = await roomsAPI.join(gameRoomId, playerName);
+      const response = await roomsAPI.join(gameRoomId, playerName, null);
       
       if (response.success) {
         const { room_id, player_id, session_id, status } = response.data;
@@ -717,7 +723,7 @@ const BirthdayGame = () => {
       }
 
       // Si la sala existe, intentar unirse
-      const response = await roomsAPI.join(roomCode, playerName);
+      const response = await roomsAPI.join(roomCode, playerName, null);
 
       if (response.success) {
         const { room_id, player_id, session_id, status } = response.data;
@@ -1179,28 +1185,18 @@ const BirthdayGame = () => {
             </div>
 
             <div>
-              <label className="block text-white text-lg font-semibold mb-2">Foto de perfil (opcional - haz clic para seleccionar):</label>
-              <div className="grid grid-cols-3 gap-2">
-                {friends.slice(0, 6).map((friend) => (
-                  <button
-                    key={friend.id}
-                    onClick={() => {
-                      setPlayerName(friend.name);
-                      console.log('Seleccionado:', friend.name);
-                    }}
-                    className="bg-white/10 hover:bg-white/20 rounded-lg p-2 transition-colors border-2 border-transparent hover:border-yellow-400"
-                  >
-                    <img
-                      src={friend.photo}
-                      alt={friend.name}
-                      className="w-12 h-12 rounded-full mx-auto mb-1"
-                      onError={(e) => {
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(friend.name)}&background=random&color=fff&size=48`;
-                      }}
-                    />
-                    <span className="text-white text-xs block text-center">{friend.name}</span>
-                  </button>
-                ))}
+              <label className="block text-white text-lg font-semibold mb-2">Foto de perfil:</label>
+              <div className="flex flex-col items-center space-y-4">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full border-4 border-white/30 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">
+                      {playerName ? playerName.charAt(0).toUpperCase() : '?'}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-white/70 text-sm text-center">
+                  Se usará tu inicial como avatar
+                </p>
               </div>
             </div>
 

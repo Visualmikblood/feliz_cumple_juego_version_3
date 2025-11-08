@@ -36,11 +36,20 @@ try {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_PERSISTENT => true,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES {$config['charset']}"
         ]
     );
 
     // Asegurar que estamos en la base de datos correcta
     $pdo->exec("USE {$config['dbname']}");
+
+    // Configurar timeouts para evitar desconexiones
+    $pdo->exec('SET SESSION wait_timeout = 28800');
+    $pdo->exec('SET SESSION interactive_timeout = 28800');
+    $pdo->exec('SET SESSION net_read_timeout = 28800');
+    $pdo->exec('SET SESSION net_write_timeout = 28800');
+    // Nota: max_allowed_packet requiere permisos GLOBAL, omitido para localhost
 
     // Verificar que la tabla player_messages existe, si no, crearla
     try {

@@ -33,10 +33,10 @@ class GameRoom {
             
             // Agregar el host como jugador
             $stmt = $this->pdo->prepare("
-                INSERT INTO players (room_id, name, profile_photo, is_host, is_ready, session_id) 
+                INSERT INTO players (room_id, name, profile_photo, is_host, is_ready, session_id)
                 VALUES (?, ?, ?, 1, 1, ?)
             ");
-            $stmt->execute([$roomId, $hostName, $profilePhoto, $sessionId]);
+            $stmt->execute([$roomId, $hostName, $profilePhoto ?: null, $sessionId]);
             $hostPlayerId = $this->pdo->lastInsertId();
             
             // Actualizar la sala con el ID del host
@@ -106,10 +106,10 @@ class GameRoom {
             
             // Agregar el jugador
             $stmt = $this->pdo->prepare("
-                INSERT INTO players (room_id, name, profile_photo, session_id) 
+                INSERT INTO players (room_id, name, profile_photo, session_id)
                 VALUES (?, ?, ?, ?)
             ");
-            $stmt->execute([$room['id'], $playerName, $profilePhoto, $sessionId]);
+            $stmt->execute([$room['id'], $playerName, $profilePhoto ?: null, $sessionId]);
             $playerId = $this->pdo->lastInsertId();
             
             // Crear notificación de jugador unido

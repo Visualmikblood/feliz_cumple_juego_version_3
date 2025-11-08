@@ -65,15 +65,15 @@ const RatingGame = ({
 
 
 
-  // Show celebration when all messages are read
+  // Show celebration when deadline expires
   useEffect(() => {
-    if (clickedBalls.size === friends.length && !showCelebration) {
+    if (isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) && !showCelebration) {
       setShowCelebration(true);
       generateConfetti(100);
       setMagicMode(true);
       setTimeout(() => setMagicMode(false), 5000);
     }
-  }, [clickedBalls.size, showCelebration, friends.length]);
+  }, [isMultiplayer, roomData?.room?.expires_at, showCelebration]);
 
   // Control audio playback
   useEffect(() => {
@@ -259,17 +259,10 @@ const RatingGame = ({
                     isClicked ? `animate-bounce ${ballAnimations[friend.id] || ''} ring-4 ring-white/60` : 'hover:animate-pulse'
                   } ${magicMode ? 'animate-pulse ring-4 ring-yellow-300' : ''}`}
                 >
-                  <img
-                    src={friend.photo}
-                    alt={friend.name}
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className={`w-full h-full ${friend.color} rounded-full flex items-center justify-center ${friend.photo ? 'hidden' : 'flex'}`}>
-                    {IconComponent && typeof IconComponent === 'function' ? <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" /> : <span className="text-white text-lg font-bold">{friend.name ? friend.name.charAt(0).toUpperCase() : '?'}</span>}
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg font-bold">
+                      {(friend.player_name || friend.name) ? (friend.player_name || friend.name).charAt(0).toUpperCase() : '?'}
+                    </span>
                   </div>
 
                   {isClicked && (
@@ -288,7 +281,7 @@ const RatingGame = ({
                 )}
 
                 <p className="text-white font-semibold mt-3 text-sm text-center">
-                  {friend.name}
+                  {friend.player_name || friend.name || 'Usuario'}
                 </p>
               </div>
             );
@@ -297,25 +290,25 @@ const RatingGame = ({
       </div>
 
             {/* Multijugador: Botón para finalizar calificaciones */}
-      {isMultiplayer && clickedBalls.size === friends.length && Object.keys(friendRatings).length === friends.length && (
-        <div className="max-w-4xl mx-auto text-center mb-8">
-          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
-            <h3 className="text-2xl font-bold text-white mb-4">
-              ¡Has calificado todos los mensajes!
-            </h3>
-            <p className="text-white/80 mb-6">
-              Haz clic en el botón para enviar tus calificaciones y ver los resultados cuando todos terminen.
-            </p>
-            <button
-              onClick={submitPlayerRatings}
-              disabled={loading}
-              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-            >
-              {loading ? 'Enviando...' : 'Enviar Calificaciones'}
-            </button>
-          </div>
-        </div>
-      )}
+     {isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) && (
+       <div className="max-w-4xl mx-auto text-center mb-8">
+         <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
+           <h3 className="text-2xl font-bold text-white mb-4">
+             ¡Se ha agotado el tiempo para calificar!
+           </h3>
+           <p className="text-white/80 mb-6">
+             La fecha límite ha expirado. Haz clic en el botón para enviar tus calificaciones y ver los resultados.
+           </p>
+           <button
+             onClick={submitPlayerRatings}
+             disabled={loading}
+             className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+           >
+             {loading ? 'Enviando...' : 'Enviar Calificaciones'}
+           </button>
+         </div>
+       </div>
+     )}
 
       {/* Final celebration */}
       {showCelebration && (
@@ -355,11 +348,13 @@ const RatingGame = ({
                           e.target.nextElementSibling.style.display = 'flex';
                         }}
                       />
-                      <div className={`w-12 h-12 ${getBestRatedFriend().color} rounded-full flex items-center justify-center ${getBestRatedFriend().photo ? 'hidden' : 'flex'}`}>
-                       {getBestRatedFriend().icon && typeof getBestRatedFriend().icon === 'function' ? React.createElement(getBestRatedFriend().icon, { className: "w-6 h-6 text-white" }) : <span className="text-white text-sm font-bold">{getBestRatedFriend().name ? getBestRatedFriend().name.charAt(0).toUpperCase() : '?'}</span>}
-                     </div>
+                         <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                           <span className="text-white text-lg font-bold">
+                             {(getBestRatedFriend().player_name || getBestRatedFriend().name) ? (getBestRatedFriend().player_name || getBestRatedFriend().name).charAt(0).toUpperCase() : '?'}
+                           </span>
+                         </div>
                       <div>
-                        <p className="text-white font-bold">{getBestRatedFriend().name}</p>
+                        <p className="text-white font-bold">{getBestRatedFriend().player_name || getBestRatedFriend().name}</p>
                         <p className="text-green-200">{Math.max(...Object.values(friendRatings))}/100 puntos</p>
                       </div>
                     </div>
@@ -378,11 +373,13 @@ const RatingGame = ({
                             e.target.nextElementSibling.style.display = 'flex';
                           }}
                         />
-                        <div className={`w-12 h-12 ${getWorstRatedFriend().color} rounded-full flex items-center justify-center ${getWorstRatedFriend().photo ? 'hidden' : 'flex'}`}>
-                         {getWorstRatedFriend().icon && typeof getWorstRatedFriend().icon === 'function' ? React.createElement(getWorstRatedFriend().icon, { className: "w-6 h-6 text-white" }) : <span className="text-white text-sm font-bold">{getWorstRatedFriend().name ? getWorstRatedFriend().name.charAt(0).toUpperCase() : '?'}</span>}
+                       <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center">
+                         <span className="text-white text-lg font-bold">
+                           {(getWorstRatedFriend().player_name || getWorstRatedFriend().name) ? (getWorstRatedFriend().player_name || getWorstRatedFriend().name).charAt(0).toUpperCase() : '?'}
+                         </span>
                        </div>
                         <div>
-                          <p className="text-white font-bold">{getWorstRatedFriend().name}</p>
+                          <p className="text-white font-bold">{getWorstRatedFriend().player_name || getWorstRatedFriend().name}</p>
                           <p className="text-red-200">{Math.min(...Object.values(friendRatings))}/100 puntos</p>
                         </div>
                       </div>
@@ -417,19 +414,10 @@ const RatingGame = ({
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
             <div className="text-center mb-6 flex flex-col items-center relative">
-              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
-                <img
-                  src={selectedFriend.photo}
-                  alt={selectedFriend.name}
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-                <div className={`w-full h-full ${selectedFriend.color} rounded-full flex items-center justify-center ${selectedFriend.photo ? 'hidden' : 'flex'}`}>
-                  {selectedFriend.icon && typeof selectedFriend.icon === 'function' ? React.createElement(selectedFriend.icon, { className: "w-10 h-10 text-white" }) : <span className="text-white text-lg font-bold">{selectedFriend.name ? selectedFriend.name.charAt(0).toUpperCase() : '?'}</span>}
-                </div>
+              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative bg-gradient-to-br from-blue-400 to-purple-500">
+                <span className="text-white text-3xl font-bold">
+                  {(selectedFriend.player_name || selectedFriend.name) ? (selectedFriend.player_name || selectedFriend.name).charAt(0).toUpperCase() : '?'}
+                </span>
                 {/* Speaker button */}
                 <button
                   onClick={() => toggleSpeech(selectedFriend.message)}
@@ -450,7 +438,7 @@ const RatingGame = ({
                 </button>
               </div>
               <h3 className="text-3xl font-bold text-gray-800 mb-2">
-                Mensaje de {selectedFriend.name} 💌
+                Mensaje de {selectedFriend.player_name || selectedFriend.name} 💌
               </h3>
             </div>
 
