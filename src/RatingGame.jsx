@@ -220,9 +220,10 @@ const RatingGame = ({
 
             <button
               onClick={resetGame}
-              className="bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-full transition-colors duration-300"
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-300"
+              title="Salir de la Sala"
             >
-              <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
+              Salir de la Sala
             </button>
           </div>
 

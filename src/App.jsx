@@ -1336,7 +1336,7 @@ const BirthdayGame = () => {
               className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl text-lg transition-colors duration-300"
             >
               <RotateCcw className="w-5 h-5 inline mr-2" />
-              Volver
+              Volver al Menú Principal
             </button>
           </div>
         </div>
