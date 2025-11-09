@@ -230,15 +230,31 @@ const RatingGame = ({
             {isMultiplayer && players.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">
                 {players.map(player => (
-                  <div 
+                  <div
                     key={player.id}
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                      player.has_finished_rating 
-                        ? 'bg-green-500/70 text-white' 
+                    className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-2 ${
+                      player.has_finished_rating
+                        ? 'bg-green-500/70 text-white'
                         : 'bg-gray-500/70 text-white'
                     }`}
                   >
-                    {player.name} {player.has_finished_rating ? '✓' : '⏳'}
+                    {player.profile_photo ? (
+                      <img
+                        src={`http://localhost:8000/uploads/profile-photos/${player.profile_photo}`}
+                        alt={player.name}
+                        className="w-4 h-4 object-cover rounded-full border border-white/50"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-4 h-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border border-white/50" style={{ display: player.profile_photo ? 'none' : 'flex' }}>
+                      <span className="text-white text-xs font-bold">
+                        {player.name?.charAt(0)?.toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <span>{player.name} {player.has_finished_rating ? '✓' : '⏳'}</span>
                   </div>
                 ))}
               </div>
@@ -303,7 +319,18 @@ const RatingGame = ({
                     isClicked ? `animate-bounce ${ballAnimations[friend.id] || ''} ring-4 ring-white/60` : 'hover:animate-pulse'
                   } ${magicMode ? 'animate-pulse ring-4 ring-yellow-300' : ''}`}
                 >
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                  {friend.profile_photo ? (
+                    <img
+                      src={`http://localhost:8000/uploads/profile-photos/${friend.profile_photo}`}
+                      alt={friend.player_name || friend.name}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center" style={{ display: friend.profile_photo ? 'none' : 'flex' }}>
                     <span className="text-white text-lg font-bold">
                       {(friend.player_name || friend.name) ? (friend.player_name || friend.name).charAt(0).toUpperCase() : '?'}
                     </span>
@@ -324,9 +351,12 @@ const RatingGame = ({
                   </div>
                 )}
 
-                <p className="text-white font-semibold mt-3 text-sm text-center">
-                  {friend.player_name || friend.name || 'Usuario'}
-                </p>
+
+                <div className="flex flex-col items-center mt-3">
+                  <p className="text-white font-semibold text-sm text-center">
+                    {friend.player_name || friend.name || 'Usuario'}
+                  </p>
+                </div>
               </div>
             );
           })}
@@ -599,10 +629,20 @@ const RatingGame = ({
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
             <div className="text-center mb-6 flex flex-col items-center relative">
-              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative bg-gradient-to-br from-blue-400 to-purple-500">
-                <span className="text-white text-3xl font-bold">
-                  {(selectedFriend.player_name || selectedFriend.name) ? (selectedFriend.player_name || selectedFriend.name).charAt(0).toUpperCase() : '?'}
-                </span>
+              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
+                {selectedFriend.photo_url ? (
+                  <img
+                    src={selectedFriend.photo_url}
+                    alt={selectedFriend.player_name || selectedFriend.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-3xl font-bold">
+                      {(selectedFriend.player_name || selectedFriend.name) ? (selectedFriend.player_name || selectedFriend.name).charAt(0).toUpperCase() : '?'}
+                    </span>
+                  </div>
+                )}
                 {/* Speaker button */}
                 <button
                   onClick={() => toggleSpeech(selectedFriend.message)}

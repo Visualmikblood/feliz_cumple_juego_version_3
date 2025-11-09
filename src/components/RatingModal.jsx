@@ -21,17 +21,19 @@ const RatingModal = ({
       <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-8 max-w-md w-full shadow-2xl">
         <div className="flex justify-between items-start mb-6">
           <div className="flex items-center gap-4">
-            <img
-              src={selectedFriend.photo}
-              alt={selectedFriend.name}
-              className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-lg"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
-              }}
-            />
-            <div className={`w-16 h-16 ${selectedFriend.color} rounded-full flex items-center justify-center border-4 border-white shadow-lg`}>
-              {selectedFriend.icon && typeof selectedFriend.icon === 'function' ? React.createElement(selectedFriend.icon, { className: "w-8 h-8 text-white" }) : <span className="text-white text-lg font-bold">{selectedFriend.name ? selectedFriend.name.charAt(0).toUpperCase() : '?'}</span>}
+            {selectedFriend.profile_photo ? (
+              <img
+                src={`http://localhost:8000/uploads/profile-photos/${selectedFriend.profile_photo}`}
+                alt={selectedFriend.player_name || selectedFriend.name}
+                className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-lg"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div className={`w-16 h-16 ${selectedFriend.color || 'bg-gradient-to-br from-blue-400 to-purple-500'} rounded-full flex items-center justify-center border-4 border-white shadow-lg`} style={{ display: selectedFriend.profile_photo ? 'none' : 'flex' }}>
+              {selectedFriend.icon && typeof selectedFriend.icon === 'function' ? React.createElement(selectedFriend.icon, { className: "w-8 h-8 text-white" }) : <span className="text-white text-lg font-bold">{(selectedFriend.player_name || selectedFriend.name) ? (selectedFriend.player_name || selectedFriend.name).charAt(0).toUpperCase() : '?'}</span>}
             </div>
             <div>
               <h3 className="text-2xl font-bold text-gray-800">{selectedFriend.name}</h3>

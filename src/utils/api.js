@@ -20,7 +20,7 @@ const getApiBaseUrl = () => {
     return API_CONFIG.production;
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Función genérica para hacer peticiones HTTP
@@ -192,6 +192,37 @@ export const playerMessagesAPI = {
     // Obtener mensajes de jugadores en una sala
     getByRoom: async (roomId) => {
         return apiRequest(`player-messages/get&roomId=${roomId}`);
+    }
+};
+
+/**
+ * API de subida de archivos
+ */
+export const uploadAPI = {
+    // Subir foto de perfil
+    profilePhoto: async (photoFile) => {
+        const formData = new FormData();
+        formData.append('photo', photoFile);
+
+        const url = `${API_BASE_URL}/api/index.php?path=upload/profile-photo`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || `HTTP error! status: ${response.status}`);
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Error en subida de foto:', error);
+            throw error;
+        }
     }
 };
 

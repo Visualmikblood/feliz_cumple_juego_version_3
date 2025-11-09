@@ -4,7 +4,9 @@ import PointsGame from './PointsGame';
 import RatingGame from './RatingGame';
 import MultiplayerResults from './components/MultiplayerResults';
 import NotificationSystem, { useNotifications } from './components/NotificationSystem';
-import { roomsAPI, ratingsAPI, notificationsAPI, sessionStorage, validators, handleApiError, useNotificationPolling, playerMessagesAPI } from './utils/api';
+import ProfilePhotoSelector from './components/ProfilePhotoSelector';
+import { roomsAPI, ratingsAPI, notificationsAPI, sessionStorage, validators, handleApiError, useNotificationPolling, playerMessagesAPI, uploadAPI } from './utils/api';
+import { API_BASE_URL } from './utils/api';
 
 const BirthdayGame = () => {
   const [gameMode, setGameMode] = useState(null); // 'points', 'rating', or 'multiplayer'
@@ -628,8 +630,34 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
+      let profilePhotoUrl = null;
+
+      // Si hay una foto seleccionada, subirla primero
+      if (playerPhoto && playerPhoto.startsWith('data:')) {
+        try {
+          // Convertir base64 a blob
+          const response = await fetch(playerPhoto);
+          const blob = await response.blob();
+          const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+
+          const uploadResponse = await uploadAPI.profilePhoto(file);
+          if (uploadResponse.success) {
+            profilePhotoUrl = uploadResponse.data.photo_url;
+          }
+        } catch (uploadError) {
+          console.error('Error subiendo foto:', uploadError);
+          // Continuar sin foto si falla la subida
+        }
+      } else if (playerPhoto && !playerPhoto.startsWith('/uploads/')) {
+        // Si ya es una URL (pero no del backend), usarla directamente
+        profilePhotoUrl = playerPhoto;
+      } else if (playerPhoto && playerPhoto.startsWith('/uploads/')) {
+        // Si es una URL del backend, extraer solo el nombre del archivo
+        profilePhotoUrl = playerPhoto.replace('/uploads/profile-photos/', '');
+      }
+
       // Enviar la fecha completa en formato ISO
-      const response = await roomsAPI.create(playerName, null, deadlineDateTime);
+      const response = await roomsAPI.create(playerName, profilePhotoUrl, deadlineDateTime);
 
       if (response.success) {
         const { room_id, room_code, player_id, session_id } = response.data;
@@ -678,8 +706,34 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
+      let profilePhotoUrl = null;
+
+      // Si hay una foto seleccionada, subirla primero
+      if (playerPhoto && playerPhoto.startsWith('data:')) {
+        try {
+          // Convertir base64 a blob
+          const response = await fetch(playerPhoto);
+          const blob = await response.blob();
+          const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+
+          const uploadResponse = await uploadAPI.profilePhoto(file);
+          if (uploadResponse.success) {
+            profilePhotoUrl = uploadResponse.data.photo_url;
+          }
+        } catch (uploadError) {
+          console.error('Error subiendo foto:', uploadError);
+          // Continuar sin foto si falla la subida
+        }
+      } else if (playerPhoto && !playerPhoto.startsWith('/uploads/')) {
+        // Si ya es una URL (pero no del backend), usarla directamente
+        profilePhotoUrl = playerPhoto;
+      } else if (playerPhoto && playerPhoto.startsWith('/uploads/')) {
+        // Si es una URL del backend, extraer solo el nombre del archivo
+        profilePhotoUrl = playerPhoto.replace('/uploads/profile-photos/', '');
+      }
+
       console.log('Llamando a roomsAPI.join...');
-      const response = await roomsAPI.join(gameRoomId, playerName, null);
+      const response = await roomsAPI.join(gameRoomId, playerName, profilePhotoUrl);
       console.log('Respuesta de roomsAPI.join:', response);
 
       if (response.success) {
@@ -1504,18 +1558,11 @@ const BirthdayGame = () => {
 
             <div>
               <label className="block text-white text-lg font-semibold mb-2">Foto de perfil:</label>
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full border-4 border-white/30 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                    <span className="text-white text-2xl font-bold">
-                      {playerName ? playerName.charAt(0).toUpperCase() : '?'}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-white/70 text-sm text-center">
-                  Se usará tu inicial como avatar
-                </p>
-              </div>
+              <ProfilePhotoSelector
+                currentPhoto={playerPhoto}
+                onPhotoChange={setPlayerPhoto}
+                playerName={playerName}
+              />
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -1652,8 +1699,28 @@ const BirthdayGame = () => {
               <div key={player.id} className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {player.isHost && <Crown className="w-5 h-5 text-yellow-400" />}
-                  <span className="text-white font-semibold text-lg">{player.name}</span>
-                  {player.id === currentPlayerId && <span className="text-yellow-300 text-sm">(Tú)</span>}
+                  <div className="flex items-center gap-3">
+                    {player.profile_photo ? (
+                      <img
+                        src={`${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}`}
+                        alt={player.name}
+                        className="w-10 h-10 object-cover rounded-full border-2 border-white"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: player.profile_photo ? 'none' : 'flex' }}>
+                      <span className="text-white text-sm font-bold">
+                        {player.name?.charAt(0)?.toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-lg">{player.name}</span>
+                      {player.id === currentPlayerId && <span className="text-yellow-300 text-sm block">(Tú)</span>}
+                    </div>
+                  </div>
                 </div>
                 <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
                   player.isReady
@@ -1889,7 +1956,7 @@ const BirthdayGame = () => {
   }
 
   // Multiplayer results screen
-  if (isMultiplayer && gameState === 'results' && multiplayerResults) {
+  if (isMultiplayer && gameState === 'results') {
     return (
       <MultiplayerResults
         multiplayerResults={multiplayerResults}
@@ -1899,6 +1966,7 @@ const BirthdayGame = () => {
         confetti={confetti}
         shareMessage={shareMessage}
         resetGame={resetGame}
+        players={players}
       />
     );
   }

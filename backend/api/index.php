@@ -45,6 +45,56 @@ try {
                 $input['deadlineDateTime'] ?? null
             );
             break;
+
+        case 'upload/profile-photo':
+            if ($method !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+
+            // Crear directorio si no existe
+            $uploadDir = '../uploads/profile-photos/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            if (!isset($_FILES['photo'])) {
+                $result = ['success' => false, 'error' => 'No se recibió ninguna imagen'];
+                break;
+            }
+
+            $file = $_FILES['photo'];
+
+            // Validar tipo de archivo
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes)) {
+                $result = ['success' => false, 'error' => 'Tipo de archivo no permitido. Solo imágenes JPG, PNG, GIF o WebP.'];
+                break;
+            }
+
+            // Validar tamaño (máximo 5MB)
+            if ($file['size'] > 5 * 1024 * 1024) {
+                $result = ['success' => false, 'error' => 'La imagen es demasiado grande. Máximo 5MB.'];
+                break;
+            }
+
+            // Generar nombre único para el archivo
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = uniqid('profile_', true) . '.' . $extension;
+            $filePath = $uploadDir . $fileName;
+
+            // Mover archivo
+            if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                $result = [
+                    'success' => true,
+                    'data' => [
+                        'photo_url' => $fileName,
+                        'file_path' => $filePath
+                    ]
+                ];
+            } else {
+                $result = ['success' => false, 'error' => 'Error al guardar la imagen'];
+            }
+            break;
             
         case 'rooms/join':
             if ($method !== 'POST') {

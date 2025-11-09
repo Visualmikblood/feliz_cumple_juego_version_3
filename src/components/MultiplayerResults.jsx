@@ -8,7 +8,8 @@ const MultiplayerResults = ({
   friends,
   confetti,
   shareMessage,
-  resetGame
+  resetGame,
+  players
 }) => {
   if (!multiplayerResults) return null;
 
@@ -76,17 +77,21 @@ const MultiplayerResults = ({
               <div className="flex items-center gap-4">
                 <Crown className="w-12 h-12 text-yellow-300 animate-bounce" />
                 <div className="flex items-center gap-4">
-                  <img
-                    src={multiplayerResults.bestFriend.photo || `/photos/${multiplayerResults.bestFriend.name?.toLowerCase()}.jpg`}
-                    alt={multiplayerResults.bestFriend.name}
-                    className="w-16 h-16 object-cover rounded-full border-4 border-white"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className={`w-16 h-16 ${multiplayerResults.bestFriend.color} rounded-full flex items-center justify-center border-4 border-white`}>
-                    {React.createElement(multiplayerResults.bestFriend.icon, { className: "w-8 h-8 text-white" })}
+                  {multiplayerResults.bestFriend.photo ? (
+                    <img
+                      src={`http://localhost:8000/uploads/profile-photos/${multiplayerResults.bestFriend.photo}`}
+                      alt={multiplayerResults.bestFriend.name}
+                      className="w-16 h-16 object-cover rounded-full border-4 border-white"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-4 border-white`} style={{ display: multiplayerResults.bestFriend.photo ? 'none' : 'flex' }}>
+                    <span className="text-white text-lg font-bold">
+                      {multiplayerResults.bestFriend.name?.charAt(0)?.toUpperCase() || '?'}
+                    </span>
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-white">🥇 MEJOR FELICITACIÓN</h3>
@@ -104,17 +109,21 @@ const MultiplayerResults = ({
               <div className="flex items-center gap-4">
                 <TrendingDown className="w-12 h-12 text-white animate-pulse" />
                 <div className="flex items-center gap-4">
-                  <img
-                    src={multiplayerResults.worstFriend.photo || `/photos/${multiplayerResults.worstFriend.name?.toLowerCase()}.jpg`}
-                    alt={multiplayerResults.worstFriend.name}
-                    className="w-16 h-16 object-cover rounded-full border-4 border-white"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className={`w-16 h-16 ${multiplayerResults.worstFriend.color} rounded-full flex items-center justify-center border-4 border-white`}>
-                    {React.createElement(multiplayerResults.worstFriend.icon, { className: "w-8 h-8 text-white" })}
+                  {multiplayerResults.worstFriend.photo ? (
+                    <img
+                      src={`http://localhost:8000/uploads/profile-photos/${multiplayerResults.worstFriend.photo}`}
+                      alt={multiplayerResults.worstFriend.name}
+                      className="w-16 h-16 object-cover rounded-full border-4 border-white"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-4 border-white`} style={{ display: multiplayerResults.worstFriend.photo ? 'none' : 'flex' }}>
+                    <span className="text-white text-lg font-bold">
+                      {multiplayerResults.worstFriend.name?.charAt(0)?.toUpperCase() || '?'}
+                    </span>
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-white">📉 NECESITA MEJORAR</h3>
@@ -155,13 +164,31 @@ const MultiplayerResults = ({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">{medals[index] || `#${index + 1}`}</span>
-                          <div>
-                            <p className={`font-bold text-lg ${isCurrentPlayer ? 'text-white' : 'text-white'}`}>
-                              {playerData.name} {isCurrentPlayer && '(Tú)'}
-                            </p>
-                            <p className={`text-sm ${isCurrentPlayer ? 'text-yellow-100' : 'text-white/80'}`}>
-                              Promedio general: {average.toFixed(1)}/100
-                            </p>
+                          <div className="flex items-center gap-3">
+                            {playerData.profile_photo ? (
+                              <img
+                                src={`http://localhost:8000/uploads/profile-photos/${playerData.profile_photo}`}
+                                alt={playerData.name}
+                                className="w-10 h-10 object-cover rounded-full border-2 border-white"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: playerData.profile_photo ? 'none' : 'flex' }}>
+                              <span className="text-white text-sm font-bold">
+                                {playerData.name?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+                            <div>
+                              <p className={`font-bold text-lg ${isCurrentPlayer ? 'text-white' : 'text-white'}`}>
+                                {playerData.name} {isCurrentPlayer && '(Tú)'}
+                              </p>
+                              <p className={`text-sm ${isCurrentPlayer ? 'text-yellow-100' : 'text-white/80'}`}>
+                                Promedio general: {average.toFixed(1)}/100
+                              </p>
+                            </div>
                           </div>
                         </div>
                         {isCurrentPlayer && <Crown className="w-8 h-8 text-yellow-200 animate-bounce" />}
@@ -226,7 +253,18 @@ const MultiplayerResults = ({
                 .map(([messageId, messageData]) => (
                 <div key={messageId} className="bg-white/10 rounded-2xl p-6">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white">
+                    {messageData.photo_url ? (
+                      <img
+                        src={`http://localhost:8000/uploads/profile-photos/${messageData.photo_url}`}
+                        alt={messageData.friend_name}
+                        className="w-12 h-12 object-cover rounded-full border-2 border-white"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: messageData.photo_url ? 'none' : 'flex' }}>
                       <span className="text-white text-lg font-bold">
                         {messageData.friend_name?.charAt(0)?.toUpperCase() || '?'}
                       </span>
