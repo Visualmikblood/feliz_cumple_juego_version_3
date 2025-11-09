@@ -175,13 +175,13 @@ class GameRoom {
                 return ['success' => false, 'error' => 'El juego ya ha comenzado o finalizado'];
             }
             
-            // Verificar que hay al menos 2 jugadores
+            // Verificar que hay al menos 1 jugador (permitir juego solitario)
             $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM players WHERE room_id = ?");
             $stmt->execute([$roomId]);
             $playerCount = $stmt->fetch()['count'];
-            
-            if ($playerCount < 2) {
-                return ['success' => false, 'error' => 'Se necesitan al menos 2 jugadores para empezar'];
+
+            if ($playerCount < 1) {
+                return ['success' => false, 'error' => 'Se necesita al menos 1 jugador para empezar'];
             }
             
             // Iniciar el juego

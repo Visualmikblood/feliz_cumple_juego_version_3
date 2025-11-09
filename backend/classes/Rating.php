@@ -130,9 +130,9 @@ class Rating {
             $stmt->execute([$roomId]);
             $result = $stmt->fetch();
             
-            if ($result['total'] == $result['finished']) {
-                // Todos han terminado, finalizar la sala
-                $this->finishRoom($roomId);
+            if ($result['total'] == $result['finished'] && $result['total'] >= 1) {
+              // Todos han terminado, finalizar la sala
+              $this->finishRoom($roomId);
             }
             
             return ['success' => true, 'message' => 'Calificaciones completadas'];

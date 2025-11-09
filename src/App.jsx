@@ -687,23 +687,33 @@ const BirthdayGame = () => {
 
   // Función para unirse a sala
   const joinRoom = async () => {
+    console.log('=== INICIANDO UNIÓN A SALA ===');
     console.log('Intentando unirse a sala:', gameRoomId, 'con nombre:', playerName);
 
+    // Limpiar cualquier error anterior
+    setError(null);
+
+    // Validar nombre del jugador
     if (!validators.playerName(playerName)) {
+      console.log('Nombre inválido');
       setError('Por favor ingresa un nombre válido (2-50 caracteres)');
       return;
     }
 
+    // Validar código de sala
+    console.log('Validando código de sala:', gameRoomId, 'longitud:', gameRoomId.length);
     if (!validators.roomCode(gameRoomId)) {
+      console.log('Código inválido');
       setError('Por favor ingresa un código de sala válido (6 caracteres)');
       return;
     }
+
+    console.log('Validaciones pasadas, procediendo...');
 
     // Limpiar cualquier sesión existente antes de unirse
     sessionStorage.clearPlayerSession();
 
     setLoading(true);
-    setError(null);
 
     try {
       let profilePhotoUrl = null;
@@ -737,6 +747,7 @@ const BirthdayGame = () => {
       console.log('Respuesta de roomsAPI.join:', response);
 
       if (response.success) {
+        console.log('Unión exitosa, procesando datos...');
         const { room_id, player_id, session_id, status } = response.data;
         console.log('Datos de unión exitosa:', { room_id, player_id, session_id, status });
 
@@ -777,9 +788,12 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
+      console.log('Iniciando juego multijugador...');
       const response = await roomsAPI.start(roomData.room.id, currentPlayerId);
+      console.log('Respuesta de start:', response);
 
       if (response.success) {
+        console.log('Juego iniciado exitosamente, cambiando a estado writing');
         setGameState('writing');
         setGameStarted(true);
         generateConfetti(80);
@@ -787,9 +801,11 @@ const BirthdayGame = () => {
         // Iniciar polling de notificaciones
         // notificationPolling.startPolling(); // Desactivado temporalmente por errores
       } else {
+        console.error('Error en respuesta de start:', response);
         setError(handleApiError(response));
       }
     } catch (error) {
+      console.error('Error al iniciar el juego:', error);
       setError(handleApiError(error, 'Error al iniciar el juego'));
     } finally {
       setLoading(false);
@@ -832,7 +848,7 @@ const BirthdayGame = () => {
         }
 
         // Si estamos esperando y hay suficientes jugadores, mostrar mensaje
-        if (gameState === 'waiting' && newRoomData.players.length >= 2 && isHost) {
+        if (gameState === 'waiting' && newRoomData.players.length >= 1 && isHost) {
           console.log('Suficientes jugadores para iniciar el juego');
         }
       } else {
@@ -1119,7 +1135,7 @@ const BirthdayGame = () => {
 
         console.log(`${submittedCount}/${totalPlayers} mensajes enviados`);
 
-        if (submittedCount >= totalPlayers) {
+        if (submittedCount >= totalPlayers && totalPlayers >= 1) {
           // Todos han enviado mensajes, pasar a calificación
           setGameState('playing');
           await getPlayerMessages();
@@ -1209,7 +1225,7 @@ const BirthdayGame = () => {
 
         console.log(`${finishedPlayers}/${totalPlayers} jugadores han terminado`);
 
-        if (finishedPlayers >= totalPlayers && roomInfo.room.status !== 'finished') {
+        if (finishedPlayers >= totalPlayers && totalPlayers >= 1 && roomInfo.room.status !== 'finished') {
           console.log('Todos los jugadores han terminado, finalizando sala...');
           // Marcar la sala como terminada
           await roomsAPI.finish(roomData.room.id);
@@ -1315,16 +1331,48 @@ const BirthdayGame = () => {
             // Detener polling
             notificationPolling.stopPolling();
           } else {
-            console.error('Error en respuesta de getResults:', response);
+            console.error('Error obteniendo mensajes:', messagesResponse);
+            // Continuar sin mensajes si falla
+            const resultsData = {
+              ...results,
+              friendAverages,
+              bestFriend: null,
+              worstFriend: null
+            };
+            setMultiplayerResults(resultsData);
+            setAllPlayersRatings(results.player_ratings);
+            setGameState('results');
+            notificationPolling.stopPolling();
           }
-        } catch (error) {
-          console.error('Error al obtener resultados:', error);
+        } catch (messagesError) {
+          console.error('Error obteniendo mensajes:', messagesError);
+          // Continuar sin mensajes si falla
+          const resultsData = {
+            ...results,
+            friendAverages,
+            bestFriend: null,
+            worstFriend: null
+          };
+          setMultiplayerResults(resultsData);
+          setAllPlayersRatings(results.player_ratings);
+          setGameState('results');
+          notificationPolling.stopPolling();
         }
       } else {
         console.error('Error en respuesta de getResults:', response);
+        // Mostrar pantalla de error en lugar de pantalla blanca
+        setError('Error al cargar los resultados. Inténtalo de nuevo.');
+        setGameState('playing'); // Volver al estado anterior
+        // Mostrar notificación de error
+        showNotification('Error al cargar los resultados. Inténtalo de nuevo.');
       }
     } catch (error) {
       console.error('Error al obtener resultados:', error);
+      // Mostrar pantalla de error en lugar de pantalla blanca
+      setError('Error al cargar los resultados. Inténtalo de nuevo.');
+      setGameState('playing'); // Volver al estado anterior
+      // Mostrar notificación de error
+      showNotification('Error al cargar los resultados. Inténtalo de nuevo.');
     }
   };
 
@@ -1348,6 +1396,11 @@ const BirthdayGame = () => {
       }
     }
   }, [musicEnabled, gameStarted, gameState]);
+
+  // Check for existing session on app load
+  useEffect(() => {
+    checkExistingSession();
+  }, []);
 
   // Game mode selection screen
   if (!gameMode) {
@@ -1724,7 +1777,7 @@ const BirthdayGame = () => {
             {isHost ? (
               <button
                 onClick={startMultiplayerGame}
-                disabled={players.length < 2}
+                disabled={false}
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
               >
                 <GamepadIcon className="w-6 h-6 inline mr-2" />
@@ -1736,7 +1789,7 @@ const BirthdayGame = () => {
               </div>
             )}
 
-            <p className="text-white/70 text-sm">Mínimo 2 jugadores requeridos</p>
+            <p className="text-white/70 text-sm">Puedes jugar solo o esperar a más jugadores</p>
 
             {timeRemaining && gameState === 'waiting' && (
               <div className="bg-white/10 rounded-xl p-4 mb-4">
@@ -1794,7 +1847,7 @@ const BirthdayGame = () => {
               </div>
 
               <div className="bg-white/10 rounded-xl p-4">
-                <p className="text-white text-lg">Esperando a {players.length - (playerMessages.length + (hasSubmittedMessage ? 1 : 0))} jugador(es)...</p>
+                <p className="text-white text-lg">Esperando a {players.length - playerMessages.length} jugador(es)...</p>
               </div>
             </div>
           ) : (
