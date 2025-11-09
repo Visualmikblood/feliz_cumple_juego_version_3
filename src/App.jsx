@@ -1589,7 +1589,7 @@ const BirthdayGame = () => {
                   placeholder="CÓDIGO DE SALA"
                   className="w-full px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
                 />
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => {
                       console.log('Uniéndose a sala:', gameRoomId, 'con nombre:', playerName);
@@ -1611,19 +1611,6 @@ const BirthdayGame = () => {
                   >
                     <RotateCcw className="w-4 h-4 inline mr-1" />
                     {loading ? '...' : 'Re-entrar'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const confirmExit = window.confirm('¿Estás seguro de que quieres salir de la sala? Se perderá todo el progreso.');
-                      if (confirmExit) {
-                        resetGame();
-                      }
-                    }}
-                    disabled={loading}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-                  >
-                    <RotateCcw className="w-4 h-4 inline mr-1" />
-                    {loading ? '...' : 'Salir'}
                   </button>
                 </div>
                 <div className="space-y-2">

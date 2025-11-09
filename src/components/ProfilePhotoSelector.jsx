@@ -60,7 +60,10 @@ const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName }) => {
     <div className="flex flex-col items-center space-y-4">
       {/* Avatar display */}
       <div className="relative">
-        <div className="w-24 h-24 rounded-full border-4 border-white/30 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg overflow-hidden">
+        <button
+          onClick={() => setIsSelecting(!isSelecting)}
+          className="w-24 h-24 rounded-full border-4 border-white/30 bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg overflow-hidden hover:border-white/50 transition-colors cursor-pointer"
+        >
           {previewUrl ? (
             <img
               src={previewUrl}
@@ -72,14 +75,6 @@ const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName }) => {
               {getInitial()}
             </span>
           )}
-        </div>
-
-        {/* Edit button */}
-        <button
-          onClick={() => setIsSelecting(!isSelecting)}
-          className="absolute -bottom-2 -right-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full p-2 shadow-lg transition-colors"
-        >
-          <Camera className="w-4 h-4" />
         </button>
 
         {/* Remove button (only if there's a photo) */}
@@ -143,7 +138,7 @@ const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName }) => {
 
       {/* Helper text */}
       <p className="text-white/70 text-sm text-center max-w-xs">
-        {previewUrl ? 'Foto seleccionada' : 'Toca la cámara para elegir una foto de perfil'}
+        {previewUrl ? 'Foto seleccionada' : 'Toca el círculo para elegir una foto de perfil'}
       </p>
     </div>
   );
