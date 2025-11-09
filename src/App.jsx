@@ -1218,6 +1218,14 @@ const BirthdayGame = () => {
         console.log('Promedios de amigos:', friendAverages);
 
         // Encontrar mejor y peor mensaje usando los mensajes personalizados
+        // Asegurarse de que playerMessages esté disponible
+        if (playerMessages.length === 0) {
+          console.log('No hay mensajes de jugadores disponibles, obteniendo...');
+          await getPlayerMessages();
+          // Esperar un poco para que se actualice el estado
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         const bestMessage = playerMessages.find(m => m.id === results.best_message_id);
         const worstMessage = playerMessages.find(m => m.id === results.worst_message_id);
 
@@ -1233,7 +1241,7 @@ const BirthdayGame = () => {
             message: bestMessage.message,
             color: 'bg-green-400', // Color por defecto
             icon: Heart, // Icono por defecto
-            photo: `/photos/${bestMessage.player_name.toLowerCase()}.jpg`
+            photo: bestMessage.profile_photo || `/photos/${bestMessage.player_name.toLowerCase()}.jpg`
           } : null,
           worstFriend: worstMessage ? {
             id: worstMessage.id,
@@ -1241,7 +1249,7 @@ const BirthdayGame = () => {
             message: worstMessage.message,
             color: 'bg-red-400', // Color por defecto
             icon: Heart, // Icono por defecto
-            photo: `/photos/${worstMessage.player_name.toLowerCase()}.jpg`
+            photo: worstMessage.profile_photo || `/photos/${worstMessage.player_name.toLowerCase()}.jpg`
           } : null
         };
 
@@ -1862,6 +1870,7 @@ const BirthdayGame = () => {
           players={players}
           notifications={notifications}
           loading={loading}
+          onlyPlayerMessages={true}
         />
 
         <NotificationSystem

@@ -12,6 +12,26 @@ const MultiplayerResults = ({
 }) => {
   if (!multiplayerResults) return null;
 
+  // Si los datos no están completos, mostrar pantalla de carga y esperar
+  if (!multiplayerResults.bestFriend || !multiplayerResults.worstFriend) {
+    console.log('Esperando datos completos de resultados...');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center p-4">
+        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-12 shadow-2xl max-w-2xl w-full text-center">
+          <div className="flex justify-center gap-4 mb-6">
+            <Trophy className="w-16 h-16 text-yellow-300 animate-bounce" />
+            <Crown className="w-16 h-16 text-yellow-300 animate-pulse" />
+            <Trophy className="w-16 h-16 text-yellow-300 animate-bounce" />
+          </div>
+          <h2 className="text-4xl font-bold text-white mb-4">¡CALIFICACIONES COMPLETAS!</h2>
+          <p className="text-white/80 mb-6">Procesando resultados finales...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="text-white/60 text-sm mt-4">Los resultados aparecerán automáticamente</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4">
       {/* Confetti */}
@@ -57,7 +77,7 @@ const MultiplayerResults = ({
                 <Crown className="w-12 h-12 text-yellow-300 animate-bounce" />
                 <div className="flex items-center gap-4">
                   <img
-                    src={multiplayerResults.bestFriend.photo}
+                    src={multiplayerResults.bestFriend.photo || `/photos/${multiplayerResults.bestFriend.name?.toLowerCase()}.jpg`}
                     alt={multiplayerResults.bestFriend.name}
                     className="w-16 h-16 object-cover rounded-full border-4 border-white"
                     onError={(e) => {
@@ -72,7 +92,7 @@ const MultiplayerResults = ({
                     <h3 className="text-2xl font-bold text-white">🥇 MEJOR FELICITACIÓN</h3>
                     <p className="text-xl font-semibold text-white">{multiplayerResults.bestFriend.name}</p>
                     <p className="text-lg text-green-100">
-                      {multiplayerResults.friendAverages[multiplayerResults.bestFriend.id].toFixed(1)}/100 promedio
+                      {multiplayerResults.friendAverages[multiplayerResults.bestFriend.id]?.toFixed(1) || 'N/A'}/100 promedio
                     </p>
                   </div>
                 </div>
@@ -85,7 +105,7 @@ const MultiplayerResults = ({
                 <TrendingDown className="w-12 h-12 text-white animate-pulse" />
                 <div className="flex items-center gap-4">
                   <img
-                    src={multiplayerResults.worstFriend.photo}
+                    src={multiplayerResults.worstFriend.photo || `/photos/${multiplayerResults.worstFriend.name?.toLowerCase()}.jpg`}
                     alt={multiplayerResults.worstFriend.name}
                     className="w-16 h-16 object-cover rounded-full border-4 border-white"
                     onError={(e) => {
@@ -100,7 +120,7 @@ const MultiplayerResults = ({
                     <h3 className="text-2xl font-bold text-white">📉 NECESITA MEJORAR</h3>
                     <p className="text-xl font-semibold text-white">{multiplayerResults.worstFriend.name}</p>
                     <p className="text-lg text-red-100">
-                      {multiplayerResults.friendAverages[multiplayerResults.worstFriend.id].toFixed(1)}/100 promedio
+                      {multiplayerResults.friendAverages[multiplayerResults.worstFriend.id]?.toFixed(1) || 'N/A'}/100 promedio
                     </p>
                   </div>
                 </div>
@@ -169,6 +189,7 @@ const MultiplayerResults = ({
               </thead>
               <tbody>
                 {friends
+                  .filter(friend => multiplayerResults.friendAverages[friend.id] !== undefined)
                   .sort((a, b) => multiplayerResults.friendAverages[b.id] - multiplayerResults.friendAverages[a.id])
                   .map((friend, index) => (
                   <tr key={friend.id} className="border-b border-white/20 hover:bg-white/10 transition-colors">
@@ -179,7 +200,7 @@ const MultiplayerResults = ({
                       </td>
                     ))}
                     <td className="text-center p-3 font-bold bg-yellow-500/30 rounded-lg">
-                      {multiplayerResults.friendAverages[friend.id].toFixed(1)}
+                      {multiplayerResults.friendAverages[friend.id]?.toFixed(1) || 'N/A'}
                     </td>
                   </tr>
                 ))}
@@ -216,7 +237,7 @@ const MultiplayerResults = ({
                       <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-yellow-400" />
                         <span className="text-white/80">
-                          {multiplayerResults.friendAverages[friend.id].toFixed(1)}/100 promedio
+                          {multiplayerResults.friendAverages[friend.id]?.toFixed(1) || 'N/A'}/100 promedio
                         </span>
                       </div>
                     </div>

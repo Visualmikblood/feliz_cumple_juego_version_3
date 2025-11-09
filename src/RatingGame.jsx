@@ -351,15 +351,18 @@ const RatingGame = ({
                showCelebration
              });
 
-             if (deadlineExpired || allPlayersFinished) {
-               console.log('🎯 SHOWING SUBMIT BUTTON - deadlineExpired:', deadlineExpired, 'allPlayersFinished:', allPlayersFinished);
+             // El botón aparece cuando todos los jugadores terminaron O cuando expiró el tiempo Y el jugador actual terminó sus calificaciones
+             const playerFinishedAllRatings = Object.keys(friendRatings).length === friends.length;
+
+             if (allPlayersFinished || (deadlineExpired && playerFinishedAllRatings)) {
+               console.log('🎯 SHOWING SUBMIT BUTTON - allPlayersFinished:', allPlayersFinished, 'deadlineExpired:', deadlineExpired, 'playerFinishedAllRatings:', playerFinishedAllRatings);
                return (
                  <>
                    <h3 className="text-2xl font-bold text-white mb-4">
                      ¡CALIFICACIONES COMPLETAS!
                    </h3>
                    <p className="text-white/80 mb-6">
-                     {deadlineExpired ? 'El tiempo ha expirado.' : 'Todos los jugadores han terminado de calificar.'}
+                     {allPlayersFinished ? 'Todos los jugadores han terminado de calificar.' : 'El tiempo ha expirado y has completado todas tus calificaciones.'}
                      <br />
                      Haz clic en el botón para enviar tus calificaciones y ver los resultados.
                    </p>
@@ -367,7 +370,11 @@ const RatingGame = ({
                    <button
                      onClick={() => {
                        console.log('🎯 SUBMIT BUTTON CLICKED!');
-                       submitPlayerRatings();
+                       if (submitPlayerRatings) {
+                         submitPlayerRatings();
+                       } else {
+                         console.error('submitPlayerRatings function not provided');
+                       }
                      }}
                      disabled={loading}
                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 mb-6"
@@ -478,7 +485,7 @@ const RatingGame = ({
                      Calificando mensajes...
                    </h3>
                    <p className="text-white/80 mb-6">
-                     El botón para enviar calificaciones aparecerá cuando expire el tiempo o todos los jugadores terminen.
+                     El botón para enviar calificaciones aparecerá cuando todos los jugadores terminen de calificar, o cuando expire el tiempo y hayas completado todas tus calificaciones.
                    </p>
                  </>
                );

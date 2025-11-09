@@ -70,21 +70,29 @@ class Rating {
      */
     public function markPlayerFinished($roomId, $playerId) {
         try {
-            // Verificar que el jugador ha calificado todos los mensajes
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) as total FROM congratulation_messages");
-            $stmt->execute();
-            $totalMessages = $stmt->fetch()['total'];
-            
+            // Solo contar mensajes de jugadores (no los predefinidos)
             $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) as rated 
-                FROM ratings 
-                WHERE room_id = ? AND player_id = ?
+                SELECT COUNT(*) as total
+                FROM player_messages
+                WHERE room_id = ?
+            ");
+            $stmt->execute([$roomId]);
+            $totalMessages = $stmt->fetch()['total'];
+
+            $stmt = $this->pdo->prepare("
+                SELECT COUNT(*) as rated
+                FROM ratings r
+                JOIN player_messages pm ON r.message_id = pm.id
+                WHERE r.room_id = ? AND r.player_id = ?
             ");
             $stmt->execute([$roomId, $playerId]);
             $ratedMessages = $stmt->fetch()['rated'];
-            
+
+            // Debug info
+            error_log("Player $playerId in room $roomId: rated $ratedMessages out of $totalMessages player messages");
+
             if ($ratedMessages < $totalMessages) {
-                return ['success' => false, 'error' => 'No has calificado todos los mensajes aún'];
+                return ['success' => false, 'error' => 'No has calificado todos los mensajes de los jugadores aún'];
             }
             
             // Marcar como terminado
@@ -187,14 +195,14 @@ class Rating {
      */
     public function calculateResults($roomId) {
         try {
-            // Obtener todas las calificaciones agrupadas
+            // Obtener todas las calificaciones agrupadas (solo mensajes de jugadores)
             $stmt = $this->pdo->prepare("
                 SELECT r.message_id, r.player_id, r.rating, r.comment,
-                       p.name as player_name, p.profile_photo,
-                       m.name as friend_name, m.color_class, m.icon_name, m.photo_url
+                        p.name as player_name, p.profile_photo,
+                        pm.message as player_message
                 FROM ratings r
                 JOIN players p ON r.player_id = p.id
-                JOIN congratulation_messages m ON r.message_id = m.id
+                JOIN player_messages pm ON r.message_id = pm.id
                 WHERE r.room_id = ?
                 ORDER BY r.message_id, r.player_id
             ");
@@ -223,10 +231,11 @@ class Rating {
                 // Por mensaje
                 if (!isset($messageRatings[$rating['message_id']])) {
                     $messageRatings[$rating['message_id']] = [
-                        'friend_name' => $rating['friend_name'],
-                        'color_class' => $rating['color_class'],
-                        'icon_name' => $rating['icon_name'],
-                        'photo_url' => $rating['photo_url'],
+                        'friend_name' => $rating['player_name'], // Usar el nombre del jugador que escribió el mensaje
+                        'color_class' => 'bg-blue-400',
+                        'icon_name' => 'Heart',
+                        'photo_url' => '',
+                        'player_message' => $rating['player_message'],
                         'ratings' => [],
                         'comments' => []
                     ];

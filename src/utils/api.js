@@ -143,7 +143,7 @@ export const ratingsAPI = {
 
     // Obtener resultados finales
     getResults: async (roomId) => {
-        return apiRequest(`ratings/results?roomId=${roomId}`);
+        return apiRequest(`ratings/results&roomId=${roomId}`);
     }
 };
 
