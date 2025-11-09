@@ -1185,8 +1185,11 @@ const BirthdayGame = () => {
         // Verificar inmediatamente si todos han terminado
         await checkIfAllPlayersFinished();
 
-        generateConfetti(100);
-        setShowCelebration(true);
+        // Solo mostrar celebración si todos han terminado
+        if (players.every(p => p.has_finished_rating)) {
+          generateConfetti(100);
+          setShowCelebration(true);
+        }
       } else {
         console.error('Error al finalizar calificaciones:', response);
         setError(handleApiError(response));

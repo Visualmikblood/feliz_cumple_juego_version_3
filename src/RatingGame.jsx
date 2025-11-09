@@ -65,29 +65,35 @@ const RatingGame = ({
 
 
 
-  // Show celebration when deadline expires or all players finished
+  // Show celebration ONLY when all players have finished (not when deadline expires)
   useEffect(() => {
     if (isMultiplayer && !showCelebration) {
-      const deadlineExpired = roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at);
       const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
 
-      console.log('Checking celebration conditions:', {
-        deadlineExpired,
+      console.log('🎯 Checking celebration conditions:', {
         allPlayersFinished,
-        expires_at: roomData?.room?.expires_at,
         playersCount: players.length,
-        playersFinished: players.filter(p => p.has_finished_rating).length
+        playersFinished: players.filter(p => p.has_finished_rating).length,
+        showCelebration
       });
 
-      if (deadlineExpired || allPlayersFinished) {
-        console.log('Triggering celebration!');
+      if (allPlayersFinished) {
+        console.log('🎉 Triggering celebration - ALL PLAYERS FINISHED!');
+        console.log('Setting showCelebration to true...');
         setShowCelebration(true);
+        console.log('Generating confetti...');
         generateConfetti(100);
         setMagicMode(true);
         setTimeout(() => setMagicMode(false), 5000);
+        console.log('Celebration setup complete');
       }
     }
-  }, [isMultiplayer, roomData?.room?.expires_at, players, showCelebration]);
+  }, [isMultiplayer, players, showCelebration]);
+
+  // Force re-render when showCelebration changes
+  useEffect(() => {
+    console.log('🎊 showCelebration changed to:', showCelebration);
+  }, [showCelebration]);
 
   // Estado para el modal de confirmación de salida
   const [showExitModal, setShowExitModal] = useState(false);
@@ -331,48 +337,153 @@ const RatingGame = ({
      {isMultiplayer && !showCelebration && (
        <div className="max-w-4xl mx-auto text-center mb-8">
          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
-           {roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) ? (
-             <>
-               <h3 className="text-2xl font-bold text-white mb-4">
-                 ¡Se ha agotado el tiempo para calificar!
-               </h3>
-               <p className="text-white/80 mb-6">
-                 La fecha límite ha expirado. Haz clic en el botón para enviar tus calificaciones y ver los resultados.
-               </p>
-               <button
-                 onClick={submitPlayerRatings}
-                 disabled={loading}
-                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-               >
-                 {loading ? 'Enviando...' : 'Enviar Calificaciones'}
-               </button>
-             </>
-           ) : players.length > 0 && players.every(p => p.has_finished_rating) ? (
-             <>
-               <h3 className="text-2xl font-bold text-white mb-4">
-                 ¡Todos los jugadores han terminado!
-               </h3>
-               <p className="text-white/80 mb-6">
-                 Todos los participantes han completado sus calificaciones. Haz clic en el botón para ver los resultados finales.
-               </p>
-               <button
-                 onClick={submitPlayerRatings}
-                 disabled={loading}
-                 className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
-               >
-                 {loading ? 'Enviando...' : 'Enviar Calificaciones'}
-               </button>
-             </>
-           ) : (
-             <>
-               <h3 className="text-2xl font-bold text-white mb-4">
-                 Calificando mensajes...
-               </h3>
-               <p className="text-white/80 mb-6">
-                 El botón para enviar calificaciones aparecerá cuando expire el tiempo o todos los jugadores terminen.
-               </p>
-             </>
-           )}
+           {(() => {
+             const now = new Date();
+             const expiresAt = roomData?.room?.expires_at;
+             const deadlineExpired = expiresAt && now > new Date(expiresAt);
+             const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
+
+             console.log('🎯 Render check:', {
+               now: now.toISOString(),
+               expiresAt,
+               deadlineExpired,
+               allPlayersFinished,
+               showCelebration
+             });
+
+             if (deadlineExpired || allPlayersFinished) {
+               console.log('🎯 SHOWING SUBMIT BUTTON - deadlineExpired:', deadlineExpired, 'allPlayersFinished:', allPlayersFinished);
+               return (
+                 <>
+                   <h3 className="text-2xl font-bold text-white mb-4">
+                     ¡CALIFICACIONES COMPLETAS!
+                   </h3>
+                   <p className="text-white/80 mb-6">
+                     {deadlineExpired ? 'El tiempo ha expirado.' : 'Todos los jugadores han terminado de calificar.'}
+                     <br />
+                     Haz clic en el botón para enviar tus calificaciones y ver los resultados.
+                   </p>
+
+                   <button
+                     onClick={() => {
+                       console.log('🎯 SUBMIT BUTTON CLICKED!');
+                       submitPlayerRatings();
+                     }}
+                     disabled={loading}
+                     className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 mb-6"
+                   >
+                     {loading ? 'Enviando...' : 'Enviar Calificaciones'}
+                   </button>
+
+                   {/* Mostrar celebración completa aquí también */}
+                   <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl p-8 shadow-2xl animate-gentle-bounce">
+                     <div className="flex justify-center gap-4 mb-6">
+                       <Award className="w-16 h-16 text-white animate-spin" />
+                       <Cake className="w-16 h-16 text-white animate-pulse" />
+                       <Award className="w-16 h-16 text-white animate-spin" />
+                     </div>
+
+                     <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                       ¡CALIFICACIONES COMPLETAS! 🏆
+                     </h2>
+                     <p className="text-white text-xl mb-6">
+                       {isMultiplayer ? 'Todos los jugadores han terminado de calificar' : 'Has calificado todas las felicitaciones de tus amigos'}
+                     </p>
+                     <div className="bg-white/20 rounded-2xl p-6 mb-6">
+                       <div className="mb-6">
+                         <p className="text-yellow-200 text-4xl font-bold mb-2">
+                           {(Object.values(friendRatings).reduce((a, b) => a + b, 0) / Object.values(friendRatings).length).toFixed(1)}/100
+                         </p>
+                         <p className="text-white text-lg">Promedio General</p>
+                       </div>
+
+                       {getBestRatedFriend() && (
+                         <div className="grid md:grid-cols-2 gap-6">
+                           <div className="bg-green-500/30 rounded-xl p-4">
+                             <h4 className="text-white font-bold mb-2">🏆 Mejor Felicitación</h4>
+                             <div className="flex items-center gap-3">
+                               <img
+                                 src={getBestRatedFriend().photo}
+                                 alt={getBestRatedFriend().name}
+                                 className="w-12 h-12 object-cover rounded-full"
+                                 onError={(e) => {
+                                   e.target.style.display = 'none';
+                                   e.target.nextElementSibling.style.display = 'flex';
+                                 }}
+                               />
+                                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-lg font-bold">
+                                      {(getBestRatedFriend().player_name || getBestRatedFriend().name) ? (getBestRatedFriend().player_name || getBestRatedFriend().name).charAt(0).toUpperCase() : '?'}
+                                    </span>
+                                  </div>
+                               <div>
+                                 <p className="text-white font-bold">{getBestRatedFriend().player_name || getBestRatedFriend().name}</p>
+                                 <p className="text-green-200">{Math.max(...Object.values(friendRatings))}/100 puntos</p>
+                               </div>
+                             </div>
+                           </div>
+
+                           {getWorstRatedFriend() && getBestRatedFriend().id !== getWorstRatedFriend().id && (
+                             <div className="bg-red-500/30 rounded-xl p-4">
+                               <h4 className="text-white font-bold mb-2">📉 Necesita Mejorar</h4>
+                               <div className="flex items-center gap-3">
+                                 <img
+                                   src={getWorstRatedFriend().photo}
+                                   alt={getWorstRatedFriend().name}
+                                   className="w-12 h-12 object-cover rounded-full"
+                                   onError={(e) => {
+                                     e.target.style.display = 'none';
+                                     e.target.nextElementSibling.style.display = 'flex';
+                                   }}
+                                 />
+                                <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-lg font-bold">
+                                    {(getWorstRatedFriend().player_name || getWorstRatedFriend().name) ? (getWorstRatedFriend().player_name || getWorstRatedFriend().name).charAt(0).toUpperCase() : '?'}
+                                  </span>
+                                </div>
+                                 <div>
+                                   <p className="text-white font-bold">{getWorstRatedFriend().player_name || getWorstRatedFriend().name}</p>
+                                   <p className="text-red-200">{Math.min(...Object.values(friendRatings))}/100 puntos</p>
+                                 </div>
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       )}
+                     </div>
+
+                     <div className="flex flex-wrap justify-center gap-4">
+                       <button
+                         onClick={shareMessage}
+                         className="bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105"
+                       >
+                         <Share className="w-5 h-5 inline mr-2" />
+                         ¡Compartir Resultado!
+                       </button>
+                       <button
+                         onClick={resetGame}
+                         className="bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105"
+                       >
+                         <RotateCcw className="w-5 h-5 inline mr-2" />
+                         Jugar de Nuevo
+                       </button>
+                     </div>
+                   </div>
+                 </>
+               );
+             } else {
+               return (
+                 <>
+                   <h3 className="text-2xl font-bold text-white mb-4">
+                     Calificando mensajes...
+                   </h3>
+                   <p className="text-white/80 mb-6">
+                     El botón para enviar calificaciones aparecerá cuando expire el tiempo o todos los jugadores terminen.
+                   </p>
+                 </>
+               );
+             }
+           })()}
          </div>
        </div>
      )}
@@ -391,7 +502,7 @@ const RatingGame = ({
               ¡CALIFICACIONES COMPLETAS! 🏆
             </h2>
             <p className="text-white text-xl mb-6">
-              Has calificado todas las felicitaciones de tus amigos
+              {isMultiplayer ? 'Todos los jugadores han terminado de calificar' : 'Has calificado todas las felicitaciones de tus amigos'}
             </p>
             <div className="bg-white/20 rounded-2xl p-6 mb-6">
               <div className="mb-6">

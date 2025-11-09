@@ -20,9 +20,9 @@ class GameRoom {
             // Generar código único para la sala
             $roomCode = $this->generateUniqueRoomCode();
 
-            // Si no se proporciona deadline, usar 1 hora por defecto
+            // Si no se proporciona deadline, usar 72 horas por defecto (como en el frontend)
             if (!$deadlineDateTime) {
-                $deadlineDateTime = date('Y-m-d H:i:s', strtotime('+1 hour'));
+                $deadlineDateTime = date('Y-m-d H:i:s', strtotime('+72 hours'));
             }
 
             // Calcular horas restantes desde ahora hasta la fecha límite
@@ -98,8 +98,12 @@ class GameRoom {
                 return ['success' => false, 'error' => 'Sala no encontrada o no disponible'];
             }
 
-            // Verificar que no ha expirado
-            if (strtotime($room['expires_at']) < time()) {
+            // Verificar que no ha expirado (dar un margen de 5 minutos extra)
+            $expirationTime = strtotime($room['expires_at']);
+            $currentTime = time();
+            $gracePeriod = 5 * 60; // 5 minutos de gracia
+
+            if (($expirationTime + $gracePeriod) < $currentTime) {
                 return ['success' => false, 'error' => 'La sala ha expirado'];
             }
 
