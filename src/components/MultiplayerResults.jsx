@@ -180,7 +180,7 @@ const MultiplayerResults = ({
             <table className="w-full text-white">
               <thead>
                 <tr className="border-b-2 border-white/30">
-                  <th className="text-left p-3 font-bold">Amigo</th>
+                  <th className="text-left p-3 font-bold">Mensaje</th>
                   {Object.values(allPlayersRatings).map((player, index) => (
                     <th key={index} className="text-center p-3 font-bold">{player.name}</th>
                   ))}
@@ -188,19 +188,23 @@ const MultiplayerResults = ({
                 </tr>
               </thead>
               <tbody>
-                {friends
-                  .filter(friend => multiplayerResults.friendAverages[friend.id] !== undefined)
-                  .sort((a, b) => multiplayerResults.friendAverages[b.id] - multiplayerResults.friendAverages[a.id])
-                  .map((friend, index) => (
-                  <tr key={friend.id} className="border-b border-white/20 hover:bg-white/10 transition-colors">
-                    <td className="p-3 font-semibold">{friend.name}</td>
+                {Object.entries(multiplayerResults.message_ratings || {})
+                  .sort(([,a], [,b]) => (multiplayerResults.friendAverages[b.friend_name] || 0) - (multiplayerResults.friendAverages[a.friend_name] || 0))
+                  .map(([messageId, messageData], index) => (
+                  <tr key={messageId} className="border-b border-white/20 hover:bg-white/10 transition-colors">
+                    <td className="p-3 font-semibold">
+                      <div className="max-w-xs">
+                        <p className="font-bold text-sm text-yellow-200">{messageData.friend_name}</p>
+                        <p className="text-sm text-white/80 truncate">"{messageData.player_message}"</p>
+                      </div>
+                    </td>
                     {Object.values(allPlayersRatings).map((player, playerIndex) => (
                       <td key={playerIndex} className="text-center p-3">
-                        {player.ratings[friend.id] || '-'}
+                        {messageData.ratings[playerIndex + 1] || '-'}
                       </td>
                     ))}
                     <td className="text-center p-3 font-bold bg-yellow-500/30 rounded-lg">
-                      {multiplayerResults.friendAverages[friend.id]?.toFixed(1) || 'N/A'}
+                      {multiplayerResults.friendAverages[messageId]?.toFixed(1) || 'N/A'}
                     </td>
                   </tr>
                 ))}
