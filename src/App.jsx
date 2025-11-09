@@ -1218,48 +1218,54 @@ const BirthdayGame = () => {
         console.log('Promedios de amigos:', friendAverages);
 
         // Encontrar mejor y peor mensaje usando los mensajes personalizados
-        // Asegurarse de que playerMessages esté disponible
-        if (playerMessages.length === 0) {
-          console.log('No hay mensajes de jugadores disponibles, obteniendo...');
-          await getPlayerMessages();
-          // Esperar un poco para que se actualice el estado
-          await new Promise(resolve => setTimeout(resolve, 500));
+        // Siempre obtener mensajes frescos de la API para asegurar que estén disponibles
+        console.log('Obteniendo mensajes frescos para resultados...');
+        try {
+          const messagesResponse = await playerMessagesAPI.getByRoom(roomData.room.id);
+          if (messagesResponse.success) {
+            console.log('Mensajes obtenidos:', messagesResponse.data.length);
+            setPlayerMessages(messagesResponse.data);
+
+            const bestMessage = messagesResponse.data.find(m => m.id === results.best_message_id);
+            const worstMessage = messagesResponse.data.find(m => m.id === results.worst_message_id);
+
+            console.log('Mejor mensaje encontrado:', bestMessage);
+            console.log('Peor mensaje encontrado:', worstMessage);
+
+            const resultsData = {
+              ...results,
+              friendAverages,
+              bestFriend: bestMessage ? {
+                id: bestMessage.id,
+                name: bestMessage.player_name,
+                message: bestMessage.message,
+                color: 'bg-green-400', // Color por defecto
+                icon: Heart, // Icono por defecto
+                photo: bestMessage.profile_photo || `/photos/${bestMessage.player_name.toLowerCase()}.jpg`
+              } : null,
+              worstFriend: worstMessage ? {
+                id: worstMessage.id,
+                name: worstMessage.player_name,
+                message: worstMessage.message,
+                color: 'bg-red-400', // Color por defecto
+                icon: Heart, // Icono por defecto
+                photo: worstMessage.profile_photo || `/photos/${worstMessage.player_name.toLowerCase()}.jpg`
+              } : null
+            };
+
+            console.log('Datos finales de resultados:', resultsData);
+            setMultiplayerResults(resultsData);
+            setAllPlayersRatings(results.player_ratings);
+            setGameState('results');
+
+            // Detener polling
+            notificationPolling.stopPolling();
+          } else {
+            console.error('Error en respuesta de getResults:', response);
+          }
+        } catch (error) {
+          console.error('Error al obtener resultados:', error);
         }
-
-        const bestMessage = playerMessages.find(m => m.id === results.best_message_id);
-        const worstMessage = playerMessages.find(m => m.id === results.worst_message_id);
-
-        console.log('Mejor mensaje encontrado:', bestMessage);
-        console.log('Peor mensaje encontrado:', worstMessage);
-
-        const resultsData = {
-          ...results,
-          friendAverages,
-          bestFriend: bestMessage ? {
-            id: bestMessage.id,
-            name: bestMessage.player_name,
-            message: bestMessage.message,
-            color: 'bg-green-400', // Color por defecto
-            icon: Heart, // Icono por defecto
-            photo: bestMessage.profile_photo || `/photos/${bestMessage.player_name.toLowerCase()}.jpg`
-          } : null,
-          worstFriend: worstMessage ? {
-            id: worstMessage.id,
-            name: worstMessage.player_name,
-            message: worstMessage.message,
-            color: 'bg-red-400', // Color por defecto
-            icon: Heart, // Icono por defecto
-            photo: worstMessage.profile_photo || `/photos/${worstMessage.player_name.toLowerCase()}.jpg`
-          } : null
-        };
-
-        console.log('Datos finales de resultados:', resultsData);
-        setMultiplayerResults(resultsData);
-        setAllPlayersRatings(results.player_ratings);
-        setGameState('results');
-
-        // Detener polling
-        notificationPolling.stopPolling();
       } else {
         console.error('Error en respuesta de getResults:', response);
       }
