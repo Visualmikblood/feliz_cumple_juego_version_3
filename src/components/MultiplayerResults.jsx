@@ -195,14 +195,17 @@ const MultiplayerResults = ({
                     <td className="p-3 font-semibold">
                       <div className="max-w-xs">
                         <p className="font-bold text-sm text-yellow-200">{messageData.friend_name}</p>
-                        <p className="text-sm text-white/80 truncate">"{messageData.player_message}"</p>
+                        <p className="text-sm text-white/80 line-clamp-2">"{messageData.player_message}"</p>
                       </div>
                     </td>
-                    {Object.values(allPlayersRatings).map((player, playerIndex) => (
-                      <td key={playerIndex} className="text-center p-3">
-                        {messageData.ratings[playerIndex + 1] || '-'}
-                      </td>
-                    ))}
+                    {Object.values(allPlayersRatings).map((player, playerIndex) => {
+                      const playerId = Object.keys(allPlayersRatings)[playerIndex];
+                      return (
+                        <td key={playerIndex} className="text-center p-3">
+                          {messageData.ratings[playerId] || '-'}
+                        </td>
+                      );
+                    })}
                     <td className="text-center p-3 font-bold bg-yellow-500/30 rounded-lg">
                       {multiplayerResults.friendAverages[messageId]?.toFixed(1) || 'N/A'}
                     </td>
@@ -214,41 +217,34 @@ const MultiplayerResults = ({
         </div>
 
         {/* Comments Section */}
-        {Object.values(multiplayerResults.message_ratings).some(msg => Object.keys(msg.comments || {}).length > 0) && (
+        {Object.values(multiplayerResults.message_ratings || {}).some(msg => Object.keys(msg.comments || {}).length > 0) && (
           <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl mb-8">
             <h2 className="text-3xl font-bold text-white mb-6 text-center">💬 Comentarios de los Jugadores</h2>
             <div className="space-y-6">
-              {friends
-                .filter(friend => multiplayerResults.message_ratings[friend.id]?.comments && 
-                                Object.keys(multiplayerResults.message_ratings[friend.id].comments).length > 0)
-                .map(friend => (
-                <div key={friend.id} className="bg-white/10 rounded-2xl p-6">
+              {Object.entries(multiplayerResults.message_ratings || {})
+                .filter(([, messageData]) => messageData.comments && Object.keys(messageData.comments).length > 0)
+                .map(([messageId, messageData]) => (
+                <div key={messageId} className="bg-white/10 rounded-2xl p-6">
                   <div className="flex items-center gap-4 mb-4">
-                    <img
-                      src={friend.photo}
-                      alt={friend.name}
-                      className="w-12 h-12 object-cover rounded-full border-2 border-white"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        e.target.nextElementSibling.style.display = 'flex';
-                      }}
-                    />
-                    <div className={`w-12 h-12 ${friend.color} rounded-full flex items-center justify-center border-2 border-white`}>
-                      {React.createElement(friend.icon, { className: "w-6 h-6 text-white" })}
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white">
+                      <span className="text-white text-lg font-bold">
+                        {messageData.friend_name?.charAt(0)?.toUpperCase() || '?'}
+                      </span>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">{friend.name}</h3>
+                      <h3 className="text-xl font-bold text-white">Mensaje de {messageData.friend_name}</h3>
                       <div className="flex items-center gap-2">
                         <Star className="w-4 h-4 text-yellow-400" />
                         <span className="text-white/80">
-                          {multiplayerResults.friendAverages[friend.id]?.toFixed(1) || 'N/A'}/100 promedio
+                          {multiplayerResults.friendAverages[messageId]?.toFixed(1) || 'N/A'}/100 promedio
                         </span>
                       </div>
+                      <p className="text-white/60 text-sm mt-1 italic">"{messageData.player_message}"</p>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
-                    {Object.entries(multiplayerResults.message_ratings[friend.id].comments || {}).map(([playerId, commentData]) => (
+                    {Object.entries(messageData.comments || {}).map(([playerId, commentData]) => (
                       <div key={playerId} className="bg-white/10 rounded-xl p-4">
                         <div className="flex items-start gap-3">
                           <MessageCircle className="w-5 h-5 text-blue-300 mt-1 flex-shrink-0" />

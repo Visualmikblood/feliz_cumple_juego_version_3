@@ -228,10 +228,23 @@ class Rating {
                     $playerRatings[$rating['player_id']]['comments'][$rating['message_id']] = $rating['comment'];
                 }
                 
-                // Por mensaje
+                // Por mensaje - necesitamos obtener el nombre del autor del mensaje
                 if (!isset($messageRatings[$rating['message_id']])) {
+                    // Obtener el nombre del autor del mensaje
+                    $stmt = $this->pdo->prepare("SELECT player_id FROM player_messages WHERE id = ?");
+                    $stmt->execute([$rating['message_id']]);
+                    $messageAuthor = $stmt->fetch();
+
+                    $authorName = 'Desconocido';
+                    if ($messageAuthor) {
+                        $stmt = $this->pdo->prepare("SELECT name FROM players WHERE id = ?");
+                        $stmt->execute([$messageAuthor['player_id']]);
+                        $author = $stmt->fetch();
+                        $authorName = $author ? $author['name'] : 'Desconocido';
+                    }
+
                     $messageRatings[$rating['message_id']] = [
-                        'friend_name' => $rating['player_name'], // Usar el nombre del jugador que escribió el mensaje
+                        'friend_name' => $authorName, // Nombre del autor del mensaje
                         'color_class' => 'bg-blue-400',
                         'icon_name' => 'Heart',
                         'photo_url' => '',
