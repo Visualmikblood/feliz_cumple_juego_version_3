@@ -53,7 +53,8 @@ const RatingGame = ({
   loading = false,
   birthdayPersonName,
   isHost = false,
-  updateRoomDeadline
+  updateRoomDeadline,
+  playerName
 }) => {
       // Función local para manejar el submit si no se pasa como prop
   const localHandleRatingSubmit = handleRatingSubmit || (() => {
@@ -180,6 +181,9 @@ const RatingGame = ({
               </p>
               <p className="text-lg text-white/80 mb-2">
                 Sala: {roomData?.room?.room_code} | {players.length} jugadores
+              </p>
+              <p className="text-lg text-yellow-300 mb-4">
+                Jugando como: {playerName}
               </p>
               {roomData?.room?.expires_at && (
                 <p className="text-sm text-white/70 mb-4">

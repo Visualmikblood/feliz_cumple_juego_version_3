@@ -1778,6 +1778,11 @@ const BirthdayGame = () => {
               <div className="text-left">
                 <h2 className="text-3xl font-bold text-white">Sala: {gameRoomId}</h2>
                 <p className="text-white/80">Esperando jugadores...</p>
+                {playerName && (
+                  <p className="text-yellow-300 text-lg font-semibold mt-2">
+                    Jugando como: {playerName}
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -1874,6 +1879,11 @@ const BirthdayGame = () => {
             <Heart className="w-20 h-20 mx-auto mb-4 text-white" />
             <h2 className="text-4xl font-bold text-white mb-4">¡Escribe tu mensaje de felicitación!</h2>
             <p className="text-xl text-white/80">Los demás jugadores calificarán tu mensaje</p>
+            {playerName && (
+              <p className="text-yellow-300 text-lg font-semibold mt-2">
+                Jugando como: {playerName}
+              </p>
+            )}
           </div>
 
           {error && (
@@ -2038,6 +2048,7 @@ const BirthdayGame = () => {
           isHost={isHost}
           updateRoomDeadline={updateRoomDeadline}
           getRoomInfo={getRoomInfo}
+          playerName={playerName}
         />
 
 
