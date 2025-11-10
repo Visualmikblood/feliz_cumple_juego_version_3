@@ -9,7 +9,8 @@ const MultiplayerResults = ({
   confetti,
   shareMessage,
   resetGame,
-  players
+  players,
+  onBackToRating
 }) => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -546,7 +547,10 @@ const MultiplayerResults = ({
 
             {onBackToRating && (
               <button
-                onClick={onBackToRating}
+                onClick={() => {
+                  console.log('Volver a Calificar clicked');
+                  onBackToRating();
+                }}
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300"
               >
                 <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />

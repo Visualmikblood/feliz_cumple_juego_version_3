@@ -2205,7 +2205,7 @@ const BirthdayGame = () => {
         shareMessage={shareMessage}
         resetGame={resetGame}
         players={players}
-        onBackToRating={backToSetup}
+        onBackToRating={() => setGameState('playing')}
       />
     );
   }

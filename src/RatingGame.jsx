@@ -793,30 +793,30 @@ const RatingGame = ({
             {/* Exit confirmation modal */}
             {showExitModal && (
               <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl transform animate-gentle-bounce">
+                <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-3xl p-8 max-w-md w-full shadow-2xl transform animate-gentle-bounce">
                   <div className="text-center mb-6">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                    <h3 className="text-2xl font-bold text-white mb-4">
                       ¿Salir de la Sala?
                     </h3>
-                    <p className="text-gray-600 mb-6">
-                      Podrás volver a entrar usando el código de sala: <strong>{roomData?.room?.room_code}</strong>
+                    <p className="text-white/80 mb-6">
+                      Podrás volver a entrar usando el código de sala: <strong className="text-yellow-300">{roomData?.room?.room_code}</strong>
                     </p>
                   </div>
-      
+
                   <div className="flex flex-col gap-3">
                     <button
                       onClick={() => {
                         setShowExitModal(false);
                         resetGame();
                       }}
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300 transform hover:scale-105"
                     >
                       Sí, Salir de la Sala
                     </button>
-      
+
                     <button
                       onClick={() => setShowExitModal(false)}
-                      className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                      className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
                     >
                       Cancelar
                     </button>
