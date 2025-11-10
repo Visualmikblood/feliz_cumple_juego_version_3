@@ -47,9 +47,8 @@ const BirthdayGame = () => {
   const [multiplayerResults, setMultiplayerResults] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [deadlineDateTime, setDeadlineDateTime] = useState(() => {
-    const now = new Date();
-    now.setHours(now.getHours() + 1); // 1 hora por defecto
-    return now.toISOString().slice(0, 16);
+    // Inicializar vacío, se llenará cuando el usuario haga foco en el campo
+    return '';
   });
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
@@ -566,11 +565,7 @@ const BirthdayGame = () => {
     setCurrentComment('');
     setMultiplayerResults(null);
     setNotifications([]);
-    setDeadlineDateTime(() => {
-      const now = new Date();
-      now.setHours(now.getHours() + 72); // 72 horas por defecto
-      return now.toISOString().slice(0, 16);
-    });
+    setDeadlineDateTime(getDefaultDeadline());
     setAvailableRooms([]);
     setShowAvailableRooms(false);
     setLoading(false);
@@ -1407,7 +1402,13 @@ const BirthdayGame = () => {
 
   // Check for existing session on app load
   useEffect(() => {
-    checkExistingSession();
+    // Solo verificar sesión existente en la carga inicial de la app
+    // No restaurar sesiones automáticamente cuando se abren nuevas pestañas
+    const isInitialLoad = !window.sessionStorage.getItem('app_loaded');
+    if (isInitialLoad) {
+      window.sessionStorage.setItem('app_loaded', 'true');
+      checkExistingSession();
+    }
   }, []);
 
   // Game mode selection screen
@@ -1699,6 +1700,17 @@ const BirthdayGame = () => {
                       type="datetime-local"
                       value={deadlineDateTime}
                       onChange={(e) => setDeadlineDateTime(e.target.value)}
+                      onFocus={(e) => {
+                        if (!e.target.value) {
+                          const now = new Date();
+                          // Ajustar a zona horaria local
+                          const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+                          const formatted = localNow.toISOString().slice(0, 16);
+                          setDeadlineDateTime(formatted);
+                          // Forzar actualización del valor del input
+                          e.target.value = formatted;
+                        }
+                      }}
                       className="flex-1 px-3 py-2 rounded-lg text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors"
                       min={new Date().toISOString().slice(0, 16)}
                     />
@@ -2040,3 +2052,4 @@ const BirthdayGame = () => {
 };
 
 export default BirthdayGame;
+
