@@ -50,7 +50,8 @@ const RatingGame = ({
   players = [],
   notifications = [],
   loading = false,
-  birthdayPersonName
+  birthdayPersonName,
+  isHost = false
 }) => {
       // Función local para manejar el submit si no se pasa como prop
   const localHandleRatingSubmit = handleRatingSubmit || (() => {
@@ -797,6 +798,57 @@ const RatingGame = ({
               </div>
             )}
       
+            {/* Campo de fecha límite para el host */}
+            {isHost && (
+              <div className="mt-8 mb-4">
+                <div className="bg-white/20 backdrop-blur-lg rounded-xl p-4 shadow-lg max-w-sm mx-auto">
+                  <label className="block text-white text-sm font-medium mb-2 text-center">
+                    Fecha límite para calificar:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="datetime-local"
+                      value={roomData?.room?.expires_at ? new Date(roomData.room.expires_at).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => {
+                        // Aquí podríamos agregar lógica para actualizar la fecha
+                        console.log('Nueva fecha:', e.target.value);
+                      }}
+                      className="flex-1 px-2 py-1 rounded text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-xs"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    <button
+                      onClick={() => {
+                        // Aquí podríamos agregar lógica para actualizar la fecha límite
+                        console.log('Actualizar fecha límite');
+                      }}
+                      disabled={loading}
+                      className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white rounded text-xs font-medium transition-colors disabled:opacity-50"
+                    >
+                      {loading ? '...' : 'Actualizar'}
+                    </button>
+                  </div>
+                  {roomData?.room?.expires_at && (() => {
+                    const now = new Date();
+                    const deadline = new Date(roomData.room.expires_at);
+                    const diff = deadline - now;
+      
+                    if (diff <= 0) return <div className="text-xs mt-2 font-bold text-red-400 text-center">⏰ EXPIRADO</div>;
+      
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+                    if (days > 0) {
+                      return <div className="text-xs mt-2 font-bold text-white text-center">⏰ {days}d {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</div>;
+                    }
+      
+                    return <div className="text-xs mt-2 font-bold text-white text-center">⏰ {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</div>;
+                  })()}
+                </div>
+              </div>
+            )}
+      
             {/* Hidden audio element */}
             <audio
               ref={audioRef}
@@ -805,8 +857,8 @@ const RatingGame = ({
               preload="auto"
               style={{ display: 'none' }}
             />
-
-      <style>{`
+      
+            <style>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           width: 24px;
