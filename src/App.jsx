@@ -843,19 +843,17 @@ const BirthdayGame = () => {
           setGameStarted(true);
           notificationPolling.startPolling();
         } else if (newRoomData.room.status === 'finished' && gameState !== 'results') {
-          console.log('Sala terminada, cambiando a results');
-          setGameState('results');
-          // Obtener resultados finales
+          console.log('Sala terminada, obteniendo resultados pero esperando botón');
+          // Obtener resultados pero NO cambiar automáticamente a pantalla de resultados
           await getMultiplayerResults();
           // Mostrar notificación de que el juego ha terminado
-          showNotification('¡Todas las calificaciones completadas! Mostrando resultados finales.');
+          showNotification('¡Todas las calificaciones completadas! Haz clic en "Ver Resultados" para continuar.');
         } else if (newRoomData.room.status === 'expired' && gameState !== 'results') {
-          console.log('Sala expirada, cambiando a results');
-          setGameState('results');
-          // Obtener resultados finales aunque no todos hayan terminado
+          console.log('Sala expirada, obteniendo resultados pero esperando botón');
+          // Obtener resultados pero NO cambiar automáticamente a pantalla de resultados
           await getMultiplayerResults();
           // Mostrar notificación de que la sala ha expirado
-          showNotification('¡La sala ha expirado! Mostrando resultados finales.');
+          showNotification('¡La sala ha expirado! Haz clic en "Ver Resultados" para continuar.');
         }
 
         // Si estamos esperando y hay suficientes jugadores, mostrar mensaje
@@ -1266,14 +1264,26 @@ const BirthdayGame = () => {
       // Verificar inmediatamente si todos han terminado (aunque no debería pasar aquí)
       await checkIfAllPlayersFinished();
 
-      // Mostrar resultados directamente ya que las calificaciones ya se enviaron automáticamente
-      await getMultiplayerResults();
+      // NO mostrar resultados automáticamente - esperar al botón "Ver Resultados"
+      // await getMultiplayerResults();
 
     } catch (error) {
       console.error('Error al procesar calificaciones:', error);
       setError(handleApiError(error, 'Error al procesar calificaciones'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para mostrar resultados (llamada desde el botón "Ver Resultados")
+  const showResults = () => {
+    if (multiplayerResults) {
+      setGameState('results');
+    } else {
+      // Si no hay resultados, intentar obtenerlos
+      getMultiplayerResults().then(() => {
+        setGameState('results');
+      });
     }
   };
 
@@ -1331,7 +1341,8 @@ const BirthdayGame = () => {
             console.log('Datos finales de resultados:', resultsData);
             setMultiplayerResults(resultsData);
             setAllPlayersRatings(results.player_ratings);
-            setGameState('results');
+            // NO cambiar automáticamente a 'results' - esperar al botón "Ver Resultados"
+            // setGameState('results');
 
             // Detener polling
             notificationPolling.stopPolling();
@@ -1346,7 +1357,7 @@ const BirthdayGame = () => {
             };
             setMultiplayerResults(resultsData);
             setAllPlayersRatings(results.player_ratings);
-            setGameState('results');
+            // NO cambiar automáticamente a 'results'
             notificationPolling.stopPolling();
           }
         } catch (messagesError) {
@@ -1360,7 +1371,7 @@ const BirthdayGame = () => {
           };
           setMultiplayerResults(resultsData);
           setAllPlayersRatings(results.player_ratings);
-          setGameState('results');
+          // NO cambiar automáticamente a 'results'
           notificationPolling.stopPolling();
         }
       } else {
@@ -2017,6 +2028,7 @@ const BirthdayGame = () => {
           getWorstRatedFriend={getWorstRatedFriend}
           isMultiplayer={true}
           submitPlayerRatings={submitPlayerRatings}
+          showResults={showResults}
           roomData={roomData}
           players={players}
           notifications={notifications}

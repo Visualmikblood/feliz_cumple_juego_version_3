@@ -46,6 +46,7 @@ const RatingGame = ({
   // Multijugador props
   isMultiplayer = false,
   submitPlayerRatings,
+  showResults,
   roomData = null,
   players = [],
   notifications = [],
@@ -69,13 +70,16 @@ const RatingGame = ({
 
 
   // Auto-submit ratings when deadline expires (regardless of completion status)
+  const [deadlineExpired, setDeadlineExpired] = useState(false);
+
   useEffect(() => {
     if (isMultiplayer && roomData?.room?.expires_at) {
       const now = new Date();
       const expiresAt = new Date(roomData.room.expires_at);
-      const deadlineExpired = now > expiresAt;
+      const isExpired = now > expiresAt;
 
-      if (deadlineExpired && !showCelebration) {
+      if (isExpired && !deadlineExpired) {
+        setDeadlineExpired(true);
         console.log('⏰ Deadline expired - auto-submitting all completed ratings...');
         // Auto-submit ratings (even if not all are completed)
         if (submitPlayerRatings) {
@@ -83,7 +87,7 @@ const RatingGame = ({
         }
       }
     }
-  }, [isMultiplayer, roomData, friendRatings, friends.length, showCelebration, submitPlayerRatings]);
+  }, [isMultiplayer, roomData, friendRatings, friends.length, showCelebration, submitPlayerRatings, deadlineExpired]);
 
   // Show celebration ONLY when all players have finished (not when deadline expires)
   useEffect(() => {
@@ -468,8 +472,9 @@ const RatingGame = ({
                    <button
                      onClick={() => {
                        console.log('🎯 VIEW RESULTS BUTTON CLICKED!');
-                       // Navigate to results - this should trigger the results screen
-                       // The ratings are already auto-submitted when deadline expired
+                       if (showResults) {
+                         showResults();
+                       }
                      }}
                      disabled={loading}
                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 mb-6"

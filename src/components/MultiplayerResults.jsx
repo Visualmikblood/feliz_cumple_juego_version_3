@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Trophy, Crown, TrendingDown, Share, RotateCcw, MessageCircle, Star } from 'lucide-react';
 
 const MultiplayerResults = ({
@@ -11,6 +11,35 @@ const MultiplayerResults = ({
   resetGame,
   players
 }) => {
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const utteranceRef = useRef(null);
+
+  // Function to handle speech synthesis
+  const toggleSpeech = (text) => {
+    if (!window.speechSynthesis) {
+      alert('Tu navegador no soporta síntesis de voz.');
+      return;
+    }
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+      };
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   if (!multiplayerResults) return null;
 
   // Si los datos no están completos, mostrar pantalla de carga y esperar
@@ -219,11 +248,12 @@ const MultiplayerResults = ({
                 {Object.entries(multiplayerResults.message_ratings || {})
                   .sort(([,a], [,b]) => (multiplayerResults.friendAverages[b.friend_name] || 0) - (multiplayerResults.friendAverages[a.friend_name] || 0))
                   .map(([messageId, messageData], index) => (
-                  <tr key={messageId} className="border-b border-white/20 hover:bg-white/10 transition-colors">
+                  <tr key={messageId} className="border-b border-white/20 hover:bg-white/10 transition-colors cursor-pointer" onClick={() => setSelectedMessage(messageData)}>
                     <td className="p-3 font-semibold">
                       <div className="max-w-xs">
                         <p className="font-bold text-sm text-yellow-200">{messageData.friend_name}</p>
                         <p className="text-sm text-white/80 line-clamp-2">"{messageData.player_message}"</p>
+                        <p className="text-xs text-blue-300 mt-1">👆 Haz clic para ver detalles</p>
                       </div>
                     </td>
                     {Object.values(allPlayersRatings).map((player, playerIndex) => {
@@ -300,6 +330,127 @@ const MultiplayerResults = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Message Modal */}
+        {selectedMessage && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+            <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
+              <div className="text-center mb-6 flex flex-col items-center relative">
+                <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
+                  {selectedMessage.photo_url ? (
+                    <img
+                      src={`http://localhost:8000/uploads/profile-photos/${selectedMessage.photo_url}`}
+                      alt={selectedMessage.friend_name}
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-3xl font-bold">
+                        {selectedMessage.friend_name ? selectedMessage.friend_name.charAt(0).toUpperCase() : '?'}
+                      </span>
+                    </div>
+                  )}
+                  {/* Speaker button */}
+                  <button
+                    onClick={() => toggleSpeech(selectedMessage.player_message)}
+                    className="absolute bottom-0 right-0 bg-white/80 hover:bg-white/100 rounded-full p-2 shadow-lg transition-colors duration-300"
+                    aria-label={isSpeaking ? "Detener audio" : "Reproducir audio"}
+                  >
+                    {isSpeaking ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5L6 9H2v6h4l5 4V5z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.54 8.46a5 5 0 010 7.07" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.07 4.93a9 9 0 010 14.14" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-2">
+                  Mensaje de {selectedMessage.friend_name} 💌
+                </h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-5 h-5 text-yellow-300" />
+                  <span className="text-white/90 font-semibold">
+                    {multiplayerResults.friendAverages[selectedMessage.friend_name]?.toFixed(1) || 'N/A'}/100 promedio
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 mb-6">
+                <p className="text-white text-lg leading-relaxed">
+                  {selectedMessage.player_message}
+                </p>
+              </div>
+
+              {/* Ratings breakdown */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6">
+                <h4 className="text-xl font-bold text-white mb-4">Calificaciones individuales:</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {Object.entries(selectedMessage.ratings || {}).map(([playerId, rating]) => {
+                    // Convertir playerId a número para comparación correcta
+                    const numericPlayerId = parseInt(playerId);
+
+                    // Buscar el jugador por diferentes campos posibles
+                    const player = Object.values(allPlayersRatings).find(p =>
+                      parseInt(p.id) === numericPlayerId ||
+                      parseInt(p.player_id) === numericPlayerId ||
+                      parseInt(p.playerId) === numericPlayerId
+                    );
+                    // Si no encontramos el jugador en allPlayersRatings, buscar en players prop
+                    const fallbackPlayer = !player ? players.find(p =>
+                      parseInt(p.id) === numericPlayerId ||
+                      parseInt(p.player_id) === numericPlayerId ||
+                      parseInt(p.playerId) === numericPlayerId
+                    ) : null;
+                    const finalPlayer = player || fallbackPlayer;
+                    const playerName = finalPlayer ? finalPlayer.name : `Jugador ${playerId}`;
+                    return (
+                      <div key={playerId} className="bg-white/20 rounded-lg p-3 shadow-sm">
+                        <p className="text-sm font-semibold text-white">{playerName}</p>
+                        <p className="text-lg font-bold text-yellow-300">{rating}/100</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Comments if any */}
+              {selectedMessage.comments && Object.keys(selectedMessage.comments).length > 0 && (
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-6">
+                  <h4 className="text-xl font-bold text-white mb-4">Comentarios:</h4>
+                  <div className="space-y-3">
+                    {Object.entries(selectedMessage.comments).map(([playerId, commentData]) => (
+                      <div key={playerId} className="bg-white/20 rounded-xl p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <MessageCircle className="w-5 h-5 text-blue-300 mt-1 flex-shrink-0" />
+                          <div>
+                            <p className="text-blue-200 font-semibold text-sm mb-1">
+                              {commentData.player_name}
+                            </p>
+                            <p className="text-white">"{commentData.comment}"</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-center">
+                <button
+                  onClick={() => setSelectedMessage(null)}
+                  className="bg-white/20 hover:bg-white/30 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
         )}
