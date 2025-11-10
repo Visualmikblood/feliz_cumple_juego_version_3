@@ -85,6 +85,9 @@ class GameRoom {
      */
     public function joinRoom($roomCode, $playerName, $profilePhoto = null) {
         try {
+            // Limpiar el código de sala (eliminar espacios y convertir a mayúsculas)
+            $roomCode = trim(strtoupper($roomCode));
+
             // Verificar que la sala existe y está disponible
             $stmt = $this->pdo->prepare("
                 SELECT id, status, expires_at
@@ -352,17 +355,29 @@ class GameRoom {
      * Generar código único para la sala
      */
     private function generateUniqueRoomCode() {
+        $maxAttempts = 10; // Evitar bucles infinitos
+        $attempts = 0;
+
         do {
-            $code = '';
-            $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            for ($i = 0; $i < 6; $i++) {
-                $code .= $chars[rand(0, strlen($chars) - 1)];
+            if ($attempts >= $maxAttempts) {
+                // Si no podemos generar un código único después de varios intentos,
+                // agregar timestamp para asegurar unicidad
+                $code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 6));
+            } else {
+                $code = '';
+                $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                for ($i = 0; $i < 6; $i++) {
+                    $code .= $chars[rand(0, strlen($chars) - 1)];
+                }
             }
-            
-            $stmt = $this->pdo->prepare("SELECT id FROM game_rooms WHERE room_code = ?");
+
+            $stmt = $this->pdo->prepare("SELECT id FROM game_rooms WHERE room_code = ? AND status IN ('waiting', 'playing')");
             $stmt->execute([$code]);
-        } while ($stmt->fetch());
-        
+            $exists = $stmt->fetch();
+
+            $attempts++;
+        } while ($exists && $attempts < $maxAttempts);
+
         return $code;
     }
     

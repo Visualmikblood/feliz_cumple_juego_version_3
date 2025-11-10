@@ -49,7 +49,8 @@ const RatingGame = ({
   roomData = null,
   players = [],
   notifications = [],
-  loading = false
+  loading = false,
+  birthdayPersonName
 }) => {
       // Función local para manejar el submit si no se pasa como prop
   const localHandleRatingSubmit = handleRatingSubmit || (() => {
@@ -143,7 +144,7 @@ const RatingGame = ({
       <div className="max-w-6xl mx-auto mb-8">
                 <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-bounce">
-             ¡FELIZ CUMPLEAÑOS!
+             ¡FELIZ CUMPLEAÑOS {birthdayPersonName}!
           </h1>
           {isMultiplayer ? (
             <>
@@ -217,7 +218,7 @@ const RatingGame = ({
                 </span>
               </div>
                             <div className="text-white font-semibold">
-                {clickedBalls.size}/11 mensajes leídos
+                {clickedBalls.size}/{friends.length} mensajes leídos
               </div>
               {isMultiplayer && (
                 <div className="text-white font-semibold">
@@ -291,11 +292,11 @@ const RatingGame = ({
             <div className="w-full bg-white/20 rounded-full h-4">
               <div
                 className="h-4 rounded-full transition-all duration-700 flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500"
-                style={{ width: `${(clickedBalls.size / 11) * 100}%` }}
+                style={{ width: `${(clickedBalls.size / friends.length) * 100}%` }}
               >
                 {clickedBalls.size > 0 && (
                   <span className="text-white text-xs font-bold">
-                    {Math.round((clickedBalls.size / 11) * 100)}%
+                    {Math.round((clickedBalls.size / friends.length) * 100)}%
                   </span>
                 )}
               </div>
@@ -392,7 +393,7 @@ const RatingGame = ({
                      ¡CALIFICACIONES COMPLETAS!
                    </h3>
                    <p className="text-white/80 mb-6">
-                     {allPlayersFinished ? 'Todos los jugadores han terminado de calificar.' : 'El tiempo ha expirado y has completado todas tus calificaciones.'}
+                     {deadlineExpired ? 'El tiempo ha expirado y has completado todas tus calificaciones.' : 'Todos los jugadores han terminado de calificar.'}
                      <br />
                      Haz clic en el botón para enviar tus calificaciones y ver los resultados.
                    </p>
@@ -424,7 +425,7 @@ const RatingGame = ({
                        ¡CALIFICACIONES COMPLETAS! 🏆
                      </h2>
                      <p className="text-white text-xl mb-6">
-                       {isMultiplayer ? 'Todos los jugadores han terminado de calificar' : 'Has calificado todas las felicitaciones de tus amigos'}
+                       {deadlineExpired ? 'El tiempo ha expirado y has completado todas tus calificaciones' : 'Todos los jugadores han terminado de calificar'}
                      </p>
                      <div className="bg-white/20 rounded-2xl p-6 mb-6">
                        <div className="mb-6">

@@ -29,6 +29,7 @@ const BirthdayGame = () => {
   const [friendRatings, setFriendRatings] = useState({});
   const [currentRating, setCurrentRating] = useState(50);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [birthdayPersonName, setBirthdayPersonName] = useState('Miguel'); // Nombre del cumpleañero
   const audioRef = useRef(null);
   const utteranceRef = useRef(null);
 
@@ -576,10 +577,16 @@ const BirthdayGame = () => {
     setError(null);
     setPlayerPhoto(null);
 
+    // Mantener el nombre del cumpleañero
+    // setBirthdayPersonName('Miguel'); // No resetear el nombre
+
     // Limpiar estados de mensajes personalizados
     setPlayerMessage('');
     setPlayerMessages([]);
     setHasSubmittedMessage(false);
+
+    // Mantener el nombre del cumpleañero
+    // setBirthdayPersonName('Miguel'); // No resetear el nombre
   };
 
   const shareMessage = () => {
@@ -700,9 +707,10 @@ const BirthdayGame = () => {
       return;
     }
 
-    // Validar código de sala
-    console.log('Validando código de sala:', gameRoomId, 'longitud:', gameRoomId.length);
-    if (!validators.roomCode(gameRoomId)) {
+    // Limpiar y validar código de sala
+    const cleanRoomCode = gameRoomId.trim().toUpperCase();
+    console.log('Validando código de sala:', cleanRoomCode, 'longitud:', cleanRoomCode.length);
+    if (!validators.roomCode(cleanRoomCode)) {
       console.log('Código inválido');
       setError('Por favor ingresa un código de sala válido (6 caracteres)');
       return;
@@ -743,7 +751,7 @@ const BirthdayGame = () => {
       }
 
       console.log('Llamando a roomsAPI.join...');
-      const response = await roomsAPI.join(gameRoomId, playerName, profilePhotoUrl);
+      const response = await roomsAPI.join(cleanRoomCode, playerName, profilePhotoUrl);
       console.log('Respuesta de roomsAPI.join:', response);
 
       if (response.success) {
@@ -757,7 +765,7 @@ const BirthdayGame = () => {
         setGameState(status === 'playing' ? 'playing' : 'waiting');
 
         // Guardar sesión
-        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, gameRoomId);
+        sessionStorage.savePlayerSession(room_id, player_id, session_id, playerName, cleanRoomCode);
 
         // Obtener información de la sala
         console.log('Obteniendo información de la sala...');
@@ -1410,11 +1418,25 @@ const BirthdayGame = () => {
           <div className="text-center mb-12">
             <Cake className="w-24 h-24 mx-auto mb-6 text-yellow-300 animate-bounce" />
             <h1 className="text-5xl font-bold text-white mb-4 titulo_feliz_cumple">
-              ¡FELIZ CUMPLEAÑOS Miguel! 🎂
+              ¡FELIZ CUMPLEAÑOS {birthdayPersonName}! 🎂
             </h1>
             <p className="text-xl text-white/90 mb-8">
               Elige tu tipo de juego favorito para descubrir las felicitaciones
             </p>
+          </div>
+
+          {/* Campo para cambiar el nombre del cumpleañero */}
+          <div className="mb-8 flex flex-col items-center">
+            <label className="block text-white text-lg font-semibold mb-2 text-center">
+              ¿Quién cumple años?
+            </label>
+            <input
+              type="text"
+              value={birthdayPersonName}
+              onChange={(e) => setBirthdayPersonName(e.target.value)}
+              placeholder="Ingresa el nombre del cumpleañero"
+              className="w-full max-w-md px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
+            />
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
@@ -1469,7 +1491,7 @@ const BirthdayGame = () => {
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg transform hover:scale-105 transition-all duration-300 w-full"
                   >
                     <Users className="w-5 h-5 inline mr-2" />
-                    ¡Jugar Multijugador!
+                    ¡Jugar Multijugador con {birthdayPersonName}!
                   </button>
                 </div>
               </div>
@@ -1525,6 +1547,7 @@ const BirthdayGame = () => {
         shareMessage={shareMessage}
         resetGame={resetGame}
         handleBallClick={handleBallClick}
+        birthdayPersonName={birthdayPersonName}
       />
     );
   }
@@ -1570,6 +1593,7 @@ const BirthdayGame = () => {
         handleRatingSubmit={handleRatingSubmit}
         getBestRatedFriend={getBestRatedFriend}
         getWorstRatedFriend={getWorstRatedFriend}
+        birthdayPersonName={birthdayPersonName}
       />
     );
   }
@@ -1582,7 +1606,7 @@ const BirthdayGame = () => {
           <div className="text-center mb-8">
             <Users className="w-20 h-20 mx-auto mb-4 text-white" />
             <h2 className="text-4xl font-bold text-white mb-4">Modo Multijugador</h2>
-            <p className="text-xl text-white/80">Configura tu sala de juego</p>
+            <p className="text-xl text-white/80">¡Feliz cumpleaños {birthdayPersonName}! Configura tu sala de juego</p>
           </div>
 
           {error && (
@@ -1854,7 +1878,7 @@ const BirthdayGame = () => {
             <div className="space-y-6">
               <div>
                 <label className="block text-white text-lg font-semibold mb-2">
-                  Tu mensaje de felicitación para Miguel:
+                  Tu mensaje de felicitación para {birthdayPersonName}:
                 </label>
                 <textarea
                   value={playerMessage}
@@ -1984,6 +2008,7 @@ const BirthdayGame = () => {
           notifications={notifications}
           loading={loading}
           onlyPlayerMessages={true}
+          birthdayPersonName={birthdayPersonName}
         />
 
         <NotificationSystem

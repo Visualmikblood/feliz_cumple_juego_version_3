@@ -40,7 +40,8 @@ const PointsGame = ({
   toggleSpeech,
   shareMessage,
   resetGame,
-  handleBallClick
+  handleBallClick,
+  birthdayPersonName
 }) => {
   // Generate random points when game starts
   const generateRandomPoints = () => {
@@ -112,7 +113,7 @@ const PointsGame = ({
       <div className="max-w-6xl mx-auto mb-8">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-bounce">
-             ¡FELIZ CUMPLEAÑOS!
+             ¡FELIZ CUMPLEAÑOS {birthdayPersonName}!
           </h1>
           <p className="text-xl text-white/90 mb-2">
             Descubre puntos ocultos
