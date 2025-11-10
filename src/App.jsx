@@ -1104,6 +1104,9 @@ const BirthdayGame = () => {
     }
   };
 
+  // Estado para el modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
   // Función para guardar mensaje personalizado
   const savePlayerMessage = async () => {
     if (!playerMessage.trim()) {
@@ -1111,6 +1114,14 @@ const BirthdayGame = () => {
       return false;
     }
 
+    // Mostrar modal de confirmación en lugar de enviar directamente
+    setShowConfirmModal(true);
+    return false; // No enviar aún
+  };
+
+  // Función para confirmar y enviar el mensaje
+  const confirmAndSendMessage = async () => {
+    setShowConfirmModal(false);
     setLoading(true);
     setError(null);
 
@@ -1505,7 +1516,7 @@ const BirthdayGame = () => {
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg transform hover:scale-105 transition-all duration-300 w-full"
                   >
                     <Users className="w-5 h-5 inline mr-2" />
-                    ¡Jugar Multijugador con {birthdayPersonName}!
+                    ¡Jugar Multijugador para felicitar a {birthdayPersonName}!
                   </button>
                 </div>
               </div>
@@ -1620,7 +1631,7 @@ const BirthdayGame = () => {
           <div className="text-center mb-8">
             <Users className="w-20 h-20 mx-auto mb-4 text-white" />
             <h2 className="text-4xl font-bold text-white mb-4">Modo Multijugador</h2>
-            <p className="text-xl text-white/80">¡Feliz cumpleaños {birthdayPersonName}! Configura tu sala de juego</p>
+            <p className="text-xl text-white/80">Configura la sala de juego</p>
           </div>
 
           {error && (
@@ -1937,6 +1948,70 @@ const BirthdayGame = () => {
                   {loading ? 'Enviando...' : 'Enviar Mensaje'}
                   <Heart className="w-5 h-5 inline ml-2" />
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal de confirmación */}
+          {showConfirmModal && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+              <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
+                <div className="text-center mb-6">
+                  <h3 className="text-3xl font-bold text-white mb-4">
+                    ¿Confirmar envío para {birthdayPersonName}? 📤
+                  </h3>
+                  <p className="text-white/80 mb-6">
+                    Revisa tu mensaje y foto antes de enviar. Una vez enviado, no podrás modificarlo.
+                  </p>
+                </div>
+
+                {/* Vista previa del mensaje */}
+                <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 mb-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                      {playerPhoto ? (
+                        <img
+                          src={playerPhoto}
+                          alt="Tu foto"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-2xl font-bold">
+                            {playerName ? playerName.charAt(0).toUpperCase() : '?'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white">{playerName}</h4>
+                      <p className="text-white/80">Mensaje de felicitación</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/10 rounded-xl p-4">
+                    <p className="text-white text-lg leading-relaxed italic">
+                      "{playerMessage}"
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={confirmAndSendMessage}
+                    disabled={loading}
+                    className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+                  >
+                    {loading ? 'Enviando...' : '✅ Confirmar y Enviar'}
+                  </button>
+
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+                  >
+                    ✏️ Volver a Editar
+                  </button>
+                </div>
               </div>
             </div>
           )}
