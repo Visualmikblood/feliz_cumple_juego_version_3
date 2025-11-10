@@ -306,7 +306,8 @@ export const validators = {
     roomCode: (code) => {
         // Permitir tanto mayúsculas como minúsculas, y convertir a mayúsculas
         const upperCode = code ? code.toUpperCase() : '';
-        return /^[A-Z0-9]{6}$/.test(upperCode);
+        // Permitir códigos de 1 a 6 caracteres para mayor flexibilidad
+        return /^[A-Z0-9]{1,6}$/.test(upperCode);
     },
 
     playerName: (name) => {

@@ -535,21 +535,33 @@ const MultiplayerResults = ({
 
         {/* Action Buttons */}
         <div className="text-center space-y-4 px-4">
-          <button
-            onClick={shareMessage}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300 mr-2 md:mr-4"
-          >
-            <Share className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
-            Compartir Resultados
-          </button>
+          <div className="flex flex-wrap justify-center gap-4">
+            <button
+              onClick={shareMessage}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300"
+            >
+              <Share className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
+              Compartir Resultados
+            </button>
 
-          <button
-            onClick={resetGame}
-            className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg transition-colors duration-300"
-          >
-            <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
-            Jugar de Nuevo
-          </button>
+            {onBackToRating && (
+              <button
+                onClick={onBackToRating}
+                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300"
+              >
+                <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
+                Volver a Calificar
+              </button>
+            )}
+
+            <button
+              onClick={resetGame}
+              className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg transition-colors duration-300"
+            >
+              <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
+              Jugar de Nuevo
+            </button>
+          </div>
         </div>
       </div>
     </div>

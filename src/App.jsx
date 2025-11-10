@@ -511,24 +511,81 @@ const BirthdayGame = () => {
   };
 
   const startGame = (mode, multiplayer = false) => {
-    console.log('startGame called with mode:', mode, 'multiplayer:', multiplayer);
+    console.log('=== STARTGAME CALLED ===');
+    console.log('Mode:', mode, 'Multiplayer:', multiplayer);
+    console.log('Current state before:', { gameMode, isMultiplayer, gameState, gameStarted });
+
+    // Forzar actualización inmediata del estado
     setGameMode(mode);
     setIsMultiplayer(multiplayer);
+
     if (multiplayer || mode === 'multiplayer') {
+      console.log('Setting multiplayer mode...');
       setGameState('setup');
       setGameStarted(false);
-      console.log('Multiplayer mode: set gameState to setup and gameStarted to false');
+      console.log('Multiplayer mode set: gameState=setup, gameStarted=false');
+
+      // Solo resetear si no hay gameRoomId (para permitir rejoin desde URL)
+      if (!gameRoomId) {
+        console.log('No gameRoomId, calling resetGame...');
+        resetGame();
+      } else {
+        console.log('gameRoomId exists, skipping resetGame');
+      }
     } else {
+      console.log('Setting single player mode...');
       setGameStarted(true);
       if (mode === 'points') {
         generateRandomPoints();
       }
       generateConfetti(80);
     }
-    if (musicEnabled && audioRef.current) {
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e));
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Forzar scroll después de un pequeño delay para asegurar que el DOM se actualice
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+
+    console.log('startGame completed');
+  };
+
+  // Función para manejar el clic en el botón multijugador
+  const handleMultiplayerClick = () => {
+    console.log('=== MULTIPLAYER BUTTON CLICKED ===');
+    console.log('Current state:', { gameMode, isMultiplayer, gameState, gameStarted });
+
+    // Forzar el estado correcto directamente
+    setGameMode('multiplayer');
+    setIsMultiplayer(true);
+    setGameState('setup');
+    setGameStarted(false);
+  };
+
+  // Función para forzar el renderizado de la pantalla de setup
+  const forceRenderSetup = () => {
+    console.log('=== FORCE RENDER SETUP ===');
+    console.log('Current state:', { gameMode, isMultiplayer, gameState, gameStarted });
+
+    // Forzar el estado correcto
+    setGameMode('multiplayer');
+    setIsMultiplayer(true);
+    setGameState('setup');
+    setGameStarted(false);
+  };
+
+  // Función para verificar si podemos renderizar la pantalla de setup
+  const canRenderSetup = () => {
+    console.log('canRenderSetup check:', { isMultiplayer, gameState, gameMode });
+    const result = isMultiplayer && gameState === 'setup';
+    console.log('canRenderSetup result:', result);
+    return result;
+  };
+
+  // Función para volver a la pantalla de configuración de multijugador
+  const backToSetup = () => {
+    console.log('backToSetup called');
+    setGameState('setup');
+    setGameStarted(false);
   };
 
   const resetGame = () => {
@@ -1512,7 +1569,7 @@ const BirthdayGame = () => {
                     ¡Jugar Solo!
                   </button>
                   <button
-                    onClick={() => startGame('multiplayer', true)}
+                    onClick={handleMultiplayerClick}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg transform hover:scale-105 transition-all duration-300 w-full"
                   >
                     <Users className="w-5 h-5 inline mr-2" />
@@ -1624,7 +1681,7 @@ const BirthdayGame = () => {
   }
 
   // Multiplayer setup screen
-  if (isMultiplayer && gameState === 'setup') {
+  if (canRenderSetup()) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center p-4">
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-12 shadow-2xl max-w-2xl w-full">
@@ -2148,6 +2205,7 @@ const BirthdayGame = () => {
         shareMessage={shareMessage}
         resetGame={resetGame}
         players={players}
+        onBackToRating={backToSetup}
       />
     );
   }
