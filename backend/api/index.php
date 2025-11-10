@@ -236,6 +236,21 @@ try {
                     FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+                // Verificar que el jugador no haya enviado ya un mensaje en esta sala
+                $stmt = $pdo->prepare("
+                    SELECT id FROM player_messages
+                    WHERE room_id = ? AND player_id = ?
+                ");
+                $stmt->execute([
+                    $input['roomId'] ?? 0,
+                    $input['playerId'] ?? 0
+                ]);
+
+                if ($stmt->fetch()) {
+                    $result = ['success' => false, 'error' => 'Ya has enviado un mensaje en esta sala.'];
+                    break;
+                }
+
                 $stmt = $pdo->prepare("
                     INSERT INTO player_messages (room_id, player_id, message)
                     VALUES (?, ?, ?)

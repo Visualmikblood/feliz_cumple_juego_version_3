@@ -1207,8 +1207,19 @@ const BirthdayGame = () => {
 
         return true;
       } else {
-        setError(handleApiError(response));
-        return false;
+        // Si el error es por nombre duplicado, permitir volver a intentar
+        if (response.error && response.error.includes('Ya existe un jugador con ese nombre')) {
+          setError('Ya existe un jugador con ese nombre en la sala. Por favor elige un nombre diferente.');
+          setHasSubmittedMessage(false); // Permitir volver a intentar
+          return false;
+        } else if (response.error && response.error.includes('Ya has enviado un mensaje')) {
+          setError('Ya has enviado un mensaje en esta sala.');
+          setHasSubmittedMessage(true); // Ya envió mensaje, no permitir reintentar
+          return false;
+        } else {
+          setError(handleApiError(response));
+          return false;
+        }
       }
     } catch (error) {
       setError(handleApiError(error, 'Error al guardar mensaje'));
@@ -1216,6 +1227,19 @@ const BirthdayGame = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Función para volver a la pantalla de edición desde el modal de confirmación
+  const backToEditFromConfirm = () => {
+    setShowConfirmModal(false);
+    // Cambiar al estado de setup para permitir editar nombre y foto
+    setGameState('setup');
+    setGameStarted(false);
+    // Limpiar cualquier error anterior
+    setError(null);
+    // Limpiar el mensaje para permitir edición completa
+    setPlayerMessage('');
+    setHasSubmittedMessage(false);
   };
 
   // Función para verificar si todos han enviado mensajes
@@ -2083,7 +2107,7 @@ const BirthdayGame = () => {
                   </button>
 
                   <button
-                    onClick={() => setShowConfirmModal(false)}
+                    onClick={backToEditFromConfirm}
                     className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
                   >
                     ✏️ Volver a Editar
