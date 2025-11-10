@@ -871,7 +871,7 @@ const BirthdayGame = () => {
   };
 
   // Función para actualizar fecha límite de sala
-  const updateRoomDeadline = async () => {
+  const updateRoomDeadline = async (newDeadline) => {
     if (!isHost) {
       setError('Solo el host puede cambiar la fecha límite');
       return;
@@ -881,7 +881,9 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
-      const response = await roomsAPI.updateDeadline(roomData.room.id, currentPlayerId, deadlineDateTime);
+      // Usar la nueva fecha si se proporciona, sino usar deadlineDateTime
+      const deadlineToUse = newDeadline || deadlineDateTime;
+      const response = await roomsAPI.updateDeadline(roomData.room.id, currentPlayerId, deadlineToUse);
 
       if (response.success) {
         // Actualizar información de la sala
@@ -2022,6 +2024,8 @@ const BirthdayGame = () => {
           onlyPlayerMessages={true}
           birthdayPersonName={birthdayPersonName}
           isHost={isHost}
+          updateRoomDeadline={updateRoomDeadline}
+          getRoomInfo={getRoomInfo}
         />
 
 

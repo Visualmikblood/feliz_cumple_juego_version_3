@@ -51,7 +51,8 @@ const RatingGame = ({
   notifications = [],
   loading = false,
   birthdayPersonName,
-  isHost = false
+  isHost = false,
+  updateRoomDeadline
 }) => {
       // Función local para manejar el submit si no se pasa como prop
   const localHandleRatingSubmit = handleRatingSubmit || (() => {
@@ -116,6 +117,9 @@ const RatingGame = ({
 
   // Estado para el modal de confirmación de salida
   const [showExitModal, setShowExitModal] = useState(false);
+
+  // Estado para la nueva fecha límite
+  const [newDeadline, setNewDeadline] = useState('');
 
   // Control audio playback
   useEffect(() => {
@@ -333,10 +337,24 @@ const RatingGame = ({
             return (
               <div key={friend.id} className="flex flex-col items-center">
                 <button
-                  onClick={(e) => handleBallClick(friend, e)}
+                  onClick={(e) => {
+                    // Solo permitir calificar si el tiempo no ha expirado
+                    if (isMultiplayer && roomData?.room?.expires_at) {
+                      const now = new Date();
+                      const expiresAt = new Date(roomData.room.expires_at);
+                      if (now > expiresAt) {
+                        // Si el tiempo expiró, no permitir calificar
+                        return;
+                      }
+                    }
+                    handleBallClick(friend, e);
+                  }}
+                  disabled={isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at)}
                   className={`w-20 h-20 md:w-24 md:h-24 rounded-full shadow-lg transform transition-all duration-300 hover:scale-110 hover:rotate-12 hover:shadow-2xl flex items-center justify-center relative ${
                     isClicked ? `animate-bounce ${ballAnimations[friend.id] || ''} ring-4 ring-white/60` : 'hover:animate-pulse'
-                  } ${magicMode ? 'animate-pulse ring-4 ring-yellow-300' : ''}`}
+                  } ${magicMode ? 'animate-pulse ring-4 ring-yellow-300' : ''} ${
+                    isMultiplayer && roomData?.room?.expires_at && new Date() > new Date(roomData.room.expires_at) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
                   {friend.profile_photo ? (
                     <img
@@ -808,20 +826,32 @@ const RatingGame = ({
                   <div className="flex gap-2">
                     <input
                       type="datetime-local"
-                      value={roomData?.room?.expires_at ? new Date(roomData.room.expires_at).toISOString().slice(0, 16) : ''}
-                      onChange={(e) => {
-                        // Aquí podríamos agregar lógica para actualizar la fecha
-                        console.log('Nueva fecha:', e.target.value);
-                      }}
+                      value={newDeadline || (roomData?.room?.expires_at ? new Date(roomData.room.expires_at).toISOString().slice(0, 16) : '')}
+                      onChange={(e) => setNewDeadline(e.target.value)}
                       className="flex-1 px-2 py-1 rounded text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-xs"
                       min={new Date().toISOString().slice(0, 16)}
                     />
                     <button
-                      onClick={() => {
-                        // Aquí podríamos agregar lógica para actualizar la fecha límite
-                        console.log('Actualizar fecha límite');
+                      onClick={async () => {
+                        if (!newDeadline.trim()) {
+                          console.log('No hay nueva fecha para actualizar');
+                          return;
+                        }
+
+                        try {
+                          if (updateRoomDeadline) {
+                            await updateRoomDeadline(newDeadline);
+                            setNewDeadline(''); // Limpiar después de actualizar
+                            // Actualizar la información de la sala para refrescar el tiempo restante
+                            if (getRoomInfo) {
+                              await getRoomInfo(roomData.room.id);
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error actualizando fecha límite:', error);
+                        }
                       }}
-                      disabled={loading}
+                      disabled={loading || !newDeadline.trim()}
                       className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white rounded text-xs font-medium transition-colors disabled:opacity-50"
                     >
                       {loading ? '...' : 'Actualizar'}
