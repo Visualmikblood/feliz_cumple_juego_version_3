@@ -166,9 +166,79 @@ const MultiplayerResults = ({
             </div>
           </div>
 
+          {/* Messages Rankings */}
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
+            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">💌 Ranking Completo de Felicitaciones</h2>
+            <div className="space-y-4">
+              {Object.entries(multiplayerResults.message_ratings || {})
+                .sort(([,a], [,b]) => (multiplayerResults.friendAverages[b.friend_name] || 0) - (multiplayerResults.friendAverages[a.friend_name] || 0))
+                .map(([messageId, messageData], index) => {
+                  const average = multiplayerResults.friendAverages[messageId] || 0;
+                  const position = index + 1;
+                  const medals = ['🥇', '🥈', '🥉'];
+
+                  return (
+                    <div
+                      key={messageId}
+                      className={`rounded-2xl p-4 transform transition-transform hover:scale-105 cursor-pointer ${
+                        position <= 3
+                          ? 'bg-gradient-to-r from-green-400 to-blue-500'
+                          : 'bg-white/10'
+                      }`}
+                      onClick={() => setSelectedMessage(messageData)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">
+                            {medals[index] || (position <= 10 ? `#${position}` : `${position}º`)}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            {messageData.photo_url ? (
+                              <img
+                                src={`http://localhost:8000/uploads/profile-photos/${messageData.photo_url}`}
+                                alt={messageData.friend_name}
+                                className="w-10 h-10 object-cover rounded-full border-2 border-white"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextElementSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: messageData.photo_url ? 'none' : 'flex' }}>
+                              <span className="text-white text-sm font-bold">
+                                {messageData.friend_name?.charAt(0)?.toUpperCase() || '?'}
+                              </span>
+                            </div>
+                            <div className="max-w-xs">
+                              <p className="font-bold text-lg text-white">
+                                {messageData.friend_name}
+                              </p>
+                              <p className="text-sm text-white/80 line-clamp-2">
+                                "{messageData.player_message}"
+                              </p>
+                              <p className="text-sm text-yellow-300 font-semibold mt-1">
+                                Promedio: {average.toFixed(1)}/100
+                                <span className="ml-2 text-xs">
+                                  ({Object.values(messageData.ratings || {}).length} calificaciones)
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl mb-1">👆</div>
+                          <div className="text-xs text-white/70">Ver detalles</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
           {/* Player Rankings */}
           <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
-            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">👥 Ranking de Jugadores</h2>
+            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">👥 Ranking Completo de Jugadores</h2>
             <div className="space-y-4">
               {Object.entries(allPlayersRatings)
                 .sort(([,a], [,b]) => {
@@ -179,6 +249,7 @@ const MultiplayerResults = ({
                 .map(([playerId, playerData], index) => {
                   const average = Object.values(playerData.ratings).reduce((sum, val) => sum + val, 0) / Object.values(playerData.ratings).length;
                   const isCurrentPlayer = playerId === currentPlayerId;
+                  const position = index + 1;
                   const medals = ['🥇', '🥈', '🥉'];
 
                   return (
@@ -187,12 +258,16 @@ const MultiplayerResults = ({
                       className={`rounded-2xl p-4 transform transition-transform hover:scale-105 ${
                         isCurrentPlayer
                           ? 'bg-gradient-to-r from-yellow-400 to-orange-500 ring-4 ring-white'
+                          : position <= 3
+                          ? 'bg-gradient-to-r from-green-400 to-blue-500'
                           : 'bg-white/10'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{medals[index] || `#${index + 1}`}</span>
+                          <span className="text-2xl">
+                            {medals[index] || (position <= 10 ? `#${position}` : `${position}º`)}
+                          </span>
                           <div className="flex items-center gap-3">
                             {playerData.profile_photo ? (
                               <img
@@ -216,6 +291,9 @@ const MultiplayerResults = ({
                               </p>
                               <p className={`text-sm ${isCurrentPlayer ? 'text-yellow-100' : 'text-white/80'}`}>
                                 Promedio general: {average.toFixed(1)}/100
+                                <span className="ml-2 text-xs">
+                                  ({Object.values(playerData.ratings).length} calificaciones)
+                                </span>
                               </p>
                             </div>
                           </div>
