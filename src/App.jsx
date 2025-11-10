@@ -1714,7 +1714,7 @@ const BirthdayGame = () => {
                       className="flex-1 px-3 py-2 rounded-lg text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors"
                       min={new Date().toISOString().slice(0, 16)}
                     />
-                    {isHost && gameState !== 'setup' && (
+                    {isHost && (
                       <button
                         onClick={updateRoomDeadline}
                         disabled={loading}
@@ -2022,6 +2022,45 @@ const BirthdayGame = () => {
           onlyPlayerMessages={true}
           birthdayPersonName={birthdayPersonName}
         />
+
+        {/* Campo de fecha límite para el host */}
+        {isHost && (
+          <div className="fixed bottom-4 left-4 bg-white/20 backdrop-blur-lg rounded-xl p-4 shadow-lg max-w-sm">
+            <label className="block text-white text-sm font-medium mb-2">
+              Fecha límite para calificar:
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="datetime-local"
+                value={deadlineDateTime}
+                onChange={(e) => setDeadlineDateTime(e.target.value)}
+                onFocus={(e) => {
+                  if (!e.target.value) {
+                    const now = new Date();
+                    const localNow = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+                    const formatted = localNow.toISOString().slice(0, 16);
+                    setDeadlineDateTime(formatted);
+                    e.target.value = formatted;
+                  }
+                }}
+                className="flex-1 px-2 py-1 rounded text-gray-800 bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-xs"
+                min={new Date().toISOString().slice(0, 16)}
+              />
+              <button
+                onClick={updateRoomDeadline}
+                disabled={loading}
+                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-500 text-white rounded text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {loading ? '...' : 'Actualizar'}
+              </button>
+            </div>
+            {timeRemaining && (
+              <div className={`text-xs mt-2 font-bold ${timeRemaining.expired ? 'text-red-400' : 'text-white'}`}>
+                ⏰ {timeRemaining.text}
+              </div>
+            )}
+          </div>
+        )}
 
         <NotificationSystem
           notifications={localNotifications}
