@@ -193,10 +193,10 @@ const RatingGame = ({
                 const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
                 if (days > 0) {
-                  return <p className="text-sm text-green-400 mb-4">⏰ Tiempo restante: {days} día{days > 1 ? 's' : ''} {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
+                  return <p className="text-sm text-white mb-4">⏰ Tiempo restante: {days} día{days > 1 ? 's' : ''} {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
                 }
 
-                return <p className="text-sm text-green-400 mb-4">⏰ Tiempo restante: {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
+                return <p className="text-sm text-white mb-4">⏰ Tiempo restante: {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}</p>;
               })()}
             </>
           ) : (

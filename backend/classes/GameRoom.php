@@ -110,14 +110,14 @@ class GameRoom {
                 return ['success' => false, 'error' => 'La sala ha expirado'];
             }
 
-            // Verificar que el jugador no esté ya en la sala
+            // Verificar que el nombre del jugador no esté ya en la sala (case insensitive)
             $stmt = $this->pdo->prepare("
                 SELECT id FROM players
-                WHERE room_id = ? AND name = ?
+                WHERE room_id = ? AND LOWER(name) = LOWER(?)
             ");
             $stmt->execute([$room['id'], $playerName]);
             if ($stmt->fetch()) {
-                return ['success' => false, 'error' => 'Ya existe un jugador con ese nombre en la sala'];
+                return ['success' => false, 'error' => 'Ya existe un jugador con ese nombre en la sala. Por favor elige un nombre diferente.'];
             }
 
             $sessionId = $this->generateSessionId();

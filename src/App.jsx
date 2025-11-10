@@ -568,7 +568,7 @@ const BirthdayGame = () => {
     setCurrentComment('');
     setMultiplayerResults(null);
     setNotifications([]);
-    setDeadlineDateTime(getDefaultDeadline());
+    setDeadlineDateTime('');
     setAvailableRooms([]);
     setShowAvailableRooms(false);
     setLoading(false);
@@ -773,7 +773,12 @@ const BirthdayGame = () => {
         console.log('Unión a sala completada exitosamente');
       } else {
         console.error('Error en respuesta de API:', response);
-        setError(handleApiError(response));
+        // Mostrar mensaje específico para nombres duplicados
+        if (response.error && response.error.includes('Ya existe un jugador con ese nombre')) {
+          setError('Ya existe un jugador con ese nombre en la sala. Por favor elige un nombre diferente.');
+        } else {
+          setError(handleApiError(response));
+        }
       }
     } catch (error) {
       console.error('Error al unirse a la sala:', error);
@@ -1727,7 +1732,7 @@ const BirthdayGame = () => {
                       </span>
                     )}
                     {timeRemaining && gameState === 'playing' && (
-                      <span className={`block mt-2 text-lg font-bold ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                      <span className={`block mt-2 text-lg font-bold ${timeRemaining.expired ? 'text-red-400' : 'text-white'}`}>
                         ⏰ Tiempo restante: {timeRemaining.text}
                       </span>
                     )}
@@ -1827,7 +1832,7 @@ const BirthdayGame = () => {
                 <p className="text-white text-center">
                   <span className="text-lg font-bold">⏰ Tiempo restante para iniciar:</span>
                   <br />
-                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-white'}`}>
                     {timeRemaining.text}
                   </span>
                 </p>
@@ -1878,7 +1883,7 @@ const BirthdayGame = () => {
               </div>
 
               <div className="bg-white/10 rounded-xl p-4">
-                <p className="text-white text-lg">Esperando a {players.length - playerMessages.length} jugador(es)...</p>
+                <p className="text-white text-lg">Esperando a {Math.max(0, players.length - (playerMessages?.length || 0))} jugador(es)...</p>
               </div>
             </div>
           ) : (
@@ -1919,7 +1924,7 @@ const BirthdayGame = () => {
                 <p className="text-white text-center">
                   <span className="text-lg font-bold">⏰ Tiempo restante para escribir:</span>
                   <br />
-                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-green-400'}`}>
+                  <span className={`text-2xl font-mono ${timeRemaining.expired ? 'text-red-400' : 'text-white'}`}>
                     {timeRemaining.text}
                   </span>
                 </p>
