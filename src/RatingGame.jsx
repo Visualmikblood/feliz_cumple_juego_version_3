@@ -159,11 +159,11 @@ const RatingGame = ({
       ))}
 
       {/* Header */}
-      <div className="max-w-6xl mx-auto mb-8">
-                <div className="text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-bounce">
-             ¡FELIZ CUMPLEAÑOS {birthdayPersonName}!
-          </h1>
+      <div className="max-w-6xl mx-auto mb-8 pt-16">
+                 <div className="text-center">
+           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 animate-bounce">
+              ¡FELIZ CUMPLEAÑOS {birthdayPersonName}!
+           </h1>
           {isMultiplayer ? (
             <>
               <p className="text-xl text-white/90 mb-2">
