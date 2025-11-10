@@ -381,7 +381,7 @@ const RatingGame = ({
         </div>
       </div>
 
-            {/* Multijugador: Botón para finalizar calificaciones */}
+            {/* Multijugador: Estado de calificaciones */}
      {isMultiplayer && !showCelebration && (
        <div className="max-w-4xl mx-auto text-center mb-8">
          <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-lg">
@@ -389,17 +389,50 @@ const RatingGame = ({
              const now = new Date();
              const expiresAt = roomData?.room?.expires_at;
              const deadlineExpired = expiresAt && now > new Date(expiresAt);
-             const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
+             const playerFinishedAllRatings = Object.keys(friendRatings).length === friends.length;
+             const totalMessages = friends.length;
+             const ratedMessages = Object.keys(friendRatings).length;
 
-             console.log('🎯 Render check:', {
-               now: now.toISOString(),
-               expiresAt,
-               deadlineExpired,
-               allPlayersFinished,
-               showCelebration
-             });
+             // Si el tiempo no ha expirado
+             if (!deadlineExpired) {
+               // Si ha calificado todos los mensajes disponibles actualmente
+               if (playerFinishedAllRatings && totalMessages > 0) {
+                 return (
+                   <>
+                     <h3 className="text-2xl font-bold text-white mb-4">
+                       ¡Has calificado todas las felicitaciones disponibles! 🎉
+                     </h3>
+                     <p className="text-white/80 mb-6">
+                       Cuando termine el tiempo podrás ver los resultados finales.
+                       <br />
+                       <strong>Nota:</strong> Pueden llegar más mensajes de otros jugadores, así que mantente atento.
+                     </p>
+                     <div className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-4 mb-4">
+                       <p className="text-blue-200 text-center font-semibold">
+                         ⏰ Esperando que expire el tiempo o que lleguen más mensajes...
+                       </p>
+                     </div>
+                   </>
+                 );
+               }
+               // Si aún faltan calificaciones
+               else {
+                 return (
+                   <>
+                     <h3 className="text-2xl font-bold text-white mb-4">
+                       Calificando mensajes...
+                     </h3>
+                     <p className="text-white/80 mb-6">
+                       Has calificado {ratedMessages} de {totalMessages} mensajes disponibles.
+                       <br />
+                       Cuando termine el tiempo, podrás ver los resultados finales.
+                     </p>
+                   </>
+                 );
+               }
+             }
 
-             // El botón aparece cuando expiró el tiempo (las calificaciones ya se auto-enviaron)
+             // Si el tiempo ha expirado
              if (deadlineExpired) {
                console.log('🎯 SHOWING RESULTS BUTTON - deadlineExpired:', deadlineExpired);
                return (
