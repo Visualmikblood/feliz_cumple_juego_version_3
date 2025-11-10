@@ -66,6 +66,23 @@ const RatingGame = ({
 
 
 
+  // Auto-submit ratings when deadline expires (regardless of completion status)
+  useEffect(() => {
+    if (isMultiplayer && roomData?.room?.expires_at) {
+      const now = new Date();
+      const expiresAt = new Date(roomData.room.expires_at);
+      const deadlineExpired = now > expiresAt;
+
+      if (deadlineExpired && !showCelebration) {
+        console.log('⏰ Deadline expired - auto-submitting all completed ratings...');
+        // Auto-submit ratings (even if not all are completed)
+        if (submitPlayerRatings) {
+          submitPlayerRatings();
+        }
+      }
+    }
+  }, [isMultiplayer, roomData, friendRatings, friends.length, showCelebration, submitPlayerRatings]);
+
   // Show celebration ONLY when all players have finished (not when deadline expires)
   useEffect(() => {
     if (isMultiplayer && !showCelebration) {
@@ -382,35 +399,30 @@ const RatingGame = ({
                showCelebration
              });
 
-             // El botón aparece cuando todos los jugadores terminaron O cuando expiró el tiempo Y el jugador actual terminó sus calificaciones
-             const playerFinishedAllRatings = Object.keys(friendRatings).length === friends.length;
-
-             if (allPlayersFinished || (deadlineExpired && playerFinishedAllRatings)) {
-               console.log('🎯 SHOWING SUBMIT BUTTON - allPlayersFinished:', allPlayersFinished, 'deadlineExpired:', deadlineExpired, 'playerFinishedAllRatings:', playerFinishedAllRatings);
+             // El botón aparece cuando expiró el tiempo (las calificaciones ya se auto-enviaron)
+             if (deadlineExpired) {
+               console.log('🎯 SHOWING RESULTS BUTTON - deadlineExpired:', deadlineExpired);
                return (
                  <>
                    <h3 className="text-2xl font-bold text-white mb-4">
                      ¡CALIFICACIONES COMPLETAS!
                    </h3>
                    <p className="text-white/80 mb-6">
-                     {deadlineExpired ? 'El tiempo ha expirado y has completado todas tus calificaciones.' : 'Todos los jugadores han terminado de calificar.'}
+                     El tiempo ha expirado y has completado todas tus calificaciones.
                      <br />
                      Haz clic en el botón para enviar tus calificaciones y ver los resultados.
                    </p>
 
                    <button
                      onClick={() => {
-                       console.log('🎯 SUBMIT BUTTON CLICKED!');
-                       if (submitPlayerRatings) {
-                         submitPlayerRatings();
-                       } else {
-                         console.error('submitPlayerRatings function not provided');
-                       }
+                       console.log('🎯 VIEW RESULTS BUTTON CLICKED!');
+                       // Navigate to results - this should trigger the results screen
+                       // The ratings are already auto-submitted when deadline expired
                      }}
                      disabled={loading}
                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 mb-6"
                    >
-                     {loading ? 'Enviando...' : 'Enviar Calificaciones'}
+                     {loading ? 'Cargando...' : 'Ver Resultados'}
                    </button>
 
                    {/* Mostrar celebración completa aquí también */}
@@ -425,7 +437,7 @@ const RatingGame = ({
                        ¡CALIFICACIONES COMPLETAS! 🏆
                      </h2>
                      <p className="text-white text-xl mb-6">
-                       {deadlineExpired ? 'El tiempo ha expirado y has completado todas tus calificaciones' : 'Todos los jugadores han terminado de calificar'}
+                       El tiempo ha expirado y has completado todas tus calificaciones
                      </p>
                      <div className="bg-white/20 rounded-2xl p-6 mb-6">
                        <div className="mb-6">

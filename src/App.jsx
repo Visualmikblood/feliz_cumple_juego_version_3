@@ -1249,27 +1249,19 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
-      const response = await ratingsAPI.finish(roomData.room.id, currentPlayerId);
-      console.log('Respuesta de finish ratings:', response);
+      // Solo enviar las calificaciones que ya están completadas
+      // No marcar como "finished" ya que esto se hace automáticamente cuando expira el tiempo
+      console.log('Enviando calificaciones completadas...');
 
-      if (response.success) {
-        console.log('Calificaciones finalizadas exitosamente');
+      // Verificar inmediatamente si todos han terminado (aunque no debería pasar aquí)
+      await checkIfAllPlayersFinished();
 
-        // Verificar inmediatamente si todos han terminado
-        await checkIfAllPlayersFinished();
+      // Mostrar resultados directamente ya que las calificaciones ya se enviaron automáticamente
+      await getMultiplayerResults();
 
-        // Solo mostrar celebración si todos han terminado
-        if (players.every(p => p.has_finished_rating)) {
-          generateConfetti(100);
-          setShowCelebration(true);
-        }
-      } else {
-        console.error('Error al finalizar calificaciones:', response);
-        setError(handleApiError(response));
-      }
     } catch (error) {
-      console.error('Error al finalizar calificaciones:', error);
-      setError(handleApiError(error, 'Error al finalizar calificaciones'));
+      console.error('Error al procesar calificaciones:', error);
+      setError(handleApiError(error, 'Error al procesar calificaciones'));
     } finally {
       setLoading(false);
     }
