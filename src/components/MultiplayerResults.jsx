@@ -171,9 +171,9 @@ const MultiplayerResults = ({
             <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">💌 Ranking Completo de Felicitaciones</h2>
             <div className="space-y-4">
               {Object.entries(multiplayerResults.message_ratings || {})
-                .sort(([,a], [,b]) => (multiplayerResults.friendAverages[b.friend_name] || 0) - (multiplayerResults.friendAverages[a.friend_name] || 0))
+                .sort(([aId], [bId]) => (multiplayerResults.friendAverages[parseInt(bId)] || 0) - (multiplayerResults.friendAverages[parseInt(aId)] || 0))
                 .map(([messageId, messageData], index) => {
-                  const average = multiplayerResults.friendAverages[messageId] || 0;
+                  const average = multiplayerResults.friendAverages[parseInt(messageId)] || 0;
                   const position = index + 1;
                   const medals = ['🥇', '🥈', '🥉'];
 
