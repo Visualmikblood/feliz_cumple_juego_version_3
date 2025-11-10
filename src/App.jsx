@@ -129,7 +129,10 @@ const BirthdayGame = () => {
       // Actualizar cada 2 segundos para verificar cambios de estado
       const interval = setInterval(() => {
         console.log('Verificando estado del juego...');
-        getRoomInfo(roomData.room.id);
+        // Solo hacer polling si NO estamos en writing (para evitar interferencias)
+        if (gameState !== 'writing') {
+          getRoomInfo(roomData.room.id);
+        }
         if (gameState === 'writing') {
           // Solo llamar checkAllMessagesSubmitted si no hay errores previos
           checkAllMessagesSubmitted().catch(error => {
@@ -206,22 +209,22 @@ const BirthdayGame = () => {
       // El resto se manejará en el componente de setup
     }
 
-    // Verificar si hay salas expiradas cada 30 segundos
-    const checkExpiredRooms = () => {
-      if (isMultiplayer && roomData?.room?.id) {
-        getRoomInfo(roomData.room.id).catch(error => {
-          console.error('Error verificando estado de sala:', error);
-        });
-      }
-    };
+    // Desactivar completamente el polling de salas expiradas para evitar interferencias
+    // const checkExpiredRooms = () => {
+    //   if (isMultiplayer && roomData?.room?.id && gameState !== 'results' && gameState !== 'writing' && gameState !== 'playing') {
+    //     getRoomInfo(roomData.room.id).catch(error => {
+    //       console.error('Error verificando estado de sala:', error);
+    //     });
+    //   }
+    // };
 
-    const interval = setInterval(checkExpiredRooms, 30000); // Cada 30 segundos
+    // const interval = setInterval(checkExpiredRooms, 30000); // Cada 30 segundos
 
     // Verificar inmediatamente si la sala ya expiró
-    checkExpiredRooms();
+    // checkExpiredRooms();
 
-    return () => clearInterval(interval);
-  }, [isMultiplayer, roomData?.room?.id]);
+    // return () => clearInterval(interval);
+  }, []);
 
   // Function to handle speech synthesis
   const toggleSpeech = (text) => {
