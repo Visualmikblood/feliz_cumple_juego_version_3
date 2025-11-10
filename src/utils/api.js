@@ -304,7 +304,9 @@ export const sessionStorage = {
  */
 export const validators = {
     roomCode: (code) => {
-        return /^[A-Z0-9]{6}$/.test(code);
+        // Permitir tanto mayúsculas como minúsculas, y convertir a mayúsculas
+        const upperCode = code ? code.toUpperCase() : '';
+        return /^[A-Z0-9]{6}$/.test(upperCode);
     },
 
     playerName: (name) => {

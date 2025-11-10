@@ -1676,7 +1676,7 @@ const BirthdayGame = () => {
                 <input
                   type="text"
                   value={gameRoomId}
-                  onChange={(e) => setGameRoomId(e.target.value.toUpperCase())}
+                  onChange={(e) => setGameRoomId(e.target.value)}
                   placeholder="CÓDIGO DE SALA"
                   className="w-full px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
                 />
