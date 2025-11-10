@@ -34,7 +34,7 @@ const MultiplayerResults = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4 overflow-x-hidden">
       {/* Confetti */}
       {confetti.map((piece) => (
         <div
@@ -50,27 +50,27 @@ const MultiplayerResults = ({
         </div>
       ))}
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto px-2 md:px-4">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center gap-4 mb-6">
-            <Trophy className="w-20 h-20 text-yellow-300 animate-bounce" />
-            <Crown className="w-20 h-20 text-yellow-300 animate-pulse" />
-            <Trophy className="w-20 h-20 text-yellow-300 animate-bounce" />
+        <div className="text-center mb-8 px-4">
+          <div className="flex justify-center gap-2 md:gap-4 mb-6">
+            <Trophy className="w-12 h-12 md:w-20 md:h-20 text-yellow-300 animate-bounce" />
+            <Crown className="w-12 h-12 md:w-20 md:h-20 text-yellow-300 animate-pulse" />
+            <Trophy className="w-12 h-12 md:w-20 md:h-20 text-yellow-300 animate-bounce" />
           </div>
-          <h1 className="text-5xl font-bold text-white mb-4">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-4 px-2">
             ¡RESULTADOS MULTIJUGADOR! 🏆
           </h1>
-          <p className="text-xl text-white/90 mb-2">
+          <p className="text-base md:text-xl text-white/90 mb-2 px-2">
             {multiplayerResults.total_players} jugadores han calificado todas las felicitaciones
           </p>
         </div>
 
         {/* Global Results */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-8 px-4">
           {/* Best and Worst Messages */}
-          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-3xl font-bold text-white mb-6 text-center">🏆 Ranking de Felicitaciones</h2>
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
+            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">🏆 Ranking de Felicitaciones</h2>
 
             {/* Best Message */}
             <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-6 mb-6 transform hover:scale-105 transition-transform">
@@ -138,8 +138,8 @@ const MultiplayerResults = ({
           </div>
 
           {/* Player Rankings */}
-          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
-            <h2 className="text-3xl font-bold text-white mb-6 text-center">👥 Ranking de Jugadores</h2>
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
+            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">👥 Ranking de Jugadores</h2>
             <div className="space-y-4">
               {Object.entries(allPlayersRatings)
                 .sort(([,a], [,b]) => {
@@ -201,10 +201,11 @@ const MultiplayerResults = ({
         </div>
 
         {/* Complete Rankings Table */}
-        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl mb-8">
-          <h2 className="text-3xl font-bold text-white mb-6 text-center">📊 Tabla Completa de Calificaciones</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-white">
+        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl mb-8 mx-4 md:mx-0">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 text-center">📊 Tabla Completa de Calificaciones</h2>
+          <div className="overflow-x-auto -mx-4 md:mx-0">
+            <div className="px-4 md:px-0">
+              <table className="w-full text-white min-w-[600px]">
               <thead>
                 <tr className="border-b-2 border-white/30">
                   <th className="text-left p-3 font-bold">Mensaje</th>
@@ -240,13 +241,14 @@ const MultiplayerResults = ({
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
         {/* Comments Section */}
         {Object.values(multiplayerResults.message_ratings || {}).some(msg => Object.keys(msg.comments || {}).length > 0) && (
-          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 shadow-2xl mb-8">
-            <h2 className="text-3xl font-bold text-white mb-6 text-center">💬 Comentarios de los Jugadores</h2>
+          <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl mb-8 mx-4 md:mx-0">
+            <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">💬 Comentarios de los Jugadores</h2>
             <div className="space-y-6">
               {Object.entries(multiplayerResults.message_ratings || {})
                 .filter(([, messageData]) => messageData.comments && Object.keys(messageData.comments).length > 0)
@@ -303,20 +305,20 @@ const MultiplayerResults = ({
         )}
 
         {/* Action Buttons */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 px-4">
           <button
             onClick={shareMessage}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 mr-4"
+            className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300 mr-2 md:mr-4"
           >
-            <Share className="w-6 h-6 inline mr-2" />
+            <Share className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
             Compartir Resultados
           </button>
 
           <button
             onClick={resetGame}
-            className="bg-white/20 hover:bg-white/30 text-white font-bold py-4 px-8 rounded-xl text-lg transition-colors duration-300"
+            className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg transition-colors duration-300"
           >
-            <RotateCcw className="w-5 h-5 inline mr-2" />
+            <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
             Jugar de Nuevo
           </button>
         </div>
