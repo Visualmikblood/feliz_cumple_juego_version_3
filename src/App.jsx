@@ -1189,8 +1189,22 @@ const BirthdayGame = () => {
         setHasSubmittedMessage(true);
         generateConfetti(30);
 
-        // Verificar si todos han enviado sus mensajes
-        await checkAllMessagesSubmitted();
+        // Cambiar inmediatamente a estado playing para mostrar la pantalla de calificación
+        console.log('Mensaje enviado exitosamente, cambiando a estado playing');
+        setGameState('playing');
+        setGameStarted(true);
+        await getPlayerMessages();
+
+        // Forzar re-renderizado inmediato
+        setTimeout(() => {
+          console.log('Forzando re-renderizado después de enviar mensaje');
+        }, 100);
+
+        // Verificar si todos han enviado sus mensajes en segundo plano
+        checkAllMessagesSubmitted().catch(error => {
+          console.error('Error silencioso en checkAllMessagesSubmitted:', error);
+        });
+
         return true;
       } else {
         setError(handleApiError(response));
@@ -1216,8 +1230,14 @@ const BirthdayGame = () => {
 
         if (submittedCount >= totalPlayers && totalPlayers >= 1) {
           // Todos han enviado mensajes, pasar a calificación
+          console.log('Todos los mensajes enviados, cambiando a estado playing');
           setGameState('playing');
+          setGameStarted(true);
           await getPlayerMessages();
+          // Forzar re-renderizado para mostrar la pantalla de calificación
+          setTimeout(() => {
+            console.log('Forzando re-renderizado después de cambiar a playing');
+          }, 100);
         }
       } else {
         console.error('Error en respuesta de API:', messagesResponse.error);
