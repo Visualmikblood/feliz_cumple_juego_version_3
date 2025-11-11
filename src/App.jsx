@@ -1525,15 +1525,16 @@ const BirthdayGame = () => {
     }
   }, [musicEnabled, gameStarted, gameState]);
 
-  // Check for existing session on app load
+  // Check for existing session on app load - only if URL has room parameter
   useEffect(() => {
-    // Solo verificar sesión existente en la carga inicial de la app
-    // No restaurar sesiones automáticamente cuando se abren nuevas pestañas
-    const isInitialLoad = !window.sessionStorage.getItem('app_loaded');
-    if (isInitialLoad) {
-      window.sessionStorage.setItem('app_loaded', 'true');
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+
+    // Solo verificar sesión existente si hay código de sala en la URL
+    if (roomCode) {
       checkExistingSession();
     }
+    // Si no hay código de sala, mostrar pantalla de selección de modo
   }, []);
 
   // Game mode selection screen
