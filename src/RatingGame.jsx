@@ -90,30 +90,19 @@ const RatingGame = ({
     }
   }, [isMultiplayer, roomData, friendRatings, friends.length, showCelebration, submitPlayerRatings, deadlineExpired]);
 
-  // Show celebration ONLY when all players have finished (not when deadline expires)
+  // Show celebration ONLY when the room status is 'finished' (game officially ended)
   useEffect(() => {
-    if (isMultiplayer && !showCelebration) {
-      const allPlayersFinished = players.length > 0 && players.every(p => p.has_finished_rating);
-
-      console.log('🎯 Checking celebration conditions:', {
-        allPlayersFinished,
-        playersCount: players.length,
-        playersFinished: players.filter(p => p.has_finished_rating).length,
-        showCelebration
-      });
-
-      if (allPlayersFinished) {
-        console.log('🎉 Triggering celebration - ALL PLAYERS FINISHED!');
-        console.log('Setting showCelebration to true...');
-        setShowCelebration(true);
-        console.log('Generating confetti...');
-        generateConfetti(100);
-        setMagicMode(true);
-        setTimeout(() => setMagicMode(false), 5000);
-        console.log('Celebration setup complete');
-      }
+    if (isMultiplayer && !showCelebration && roomData?.room?.status === 'finished') {
+      console.log('🎯 Room status changed to finished - triggering celebration!');
+      console.log('Setting showCelebration to true...');
+      setShowCelebration(true);
+      console.log('Generating confetti...');
+      generateConfetti(100);
+      setMagicMode(true);
+      setTimeout(() => setMagicMode(false), 5000);
+      console.log('Celebration setup complete');
     }
-  }, [isMultiplayer, players, showCelebration]);
+  }, [isMultiplayer, roomData?.room?.status, showCelebration]);
 
   // Force re-render when showCelebration changes
   useEffect(() => {
@@ -465,12 +454,12 @@ const RatingGame = ({
                return (
                  <>
                    <h3 className="text-2xl font-bold text-white mb-4">
-                     ¡CALIFICACIONES COMPLETAS!
+                     ¡TIEMPO EXPIRADO!
                    </h3>
                    <p className="text-white/80 mb-6">
-                     El tiempo ha expirado y has completado todas tus calificaciones.
+                     El tiempo límite para calificar ha expirado.
                      <br />
-                     Haz clic en el botón para enviar tus calificaciones y ver los resultados.
+                     Haz clic en el botón para enviar tus calificaciones y ver los resultados finales.
                    </p>
 
                    <button
@@ -483,10 +472,10 @@ const RatingGame = ({
                      disabled={loading}
                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-8 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50 mb-6"
                    >
-                     {loading ? 'Cargando...' : 'Ver Resultados'}
+                     {loading ? 'Cargando...' : 'Ver Resultados Finales'}
                    </button>
 
-                   {/* Mostrar celebración completa aquí también */}
+                   {/* Celebración completa cuando expira el tiempo */}
                    <div className="bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 rounded-3xl p-8 shadow-2xl animate-gentle-bounce">
                      <div className="flex justify-center gap-4 mb-6">
                        <Award className="w-16 h-16 text-white animate-spin" />
@@ -547,7 +536,7 @@ const RatingGame = ({
                                      e.target.nextElementSibling.style.display = 'flex';
                                    }}
                                  />
-                                <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
                                   <span className="text-white text-lg font-bold">
                                     {(getWorstRatedFriend().player_name || getWorstRatedFriend().name) ? (getWorstRatedFriend().player_name || getWorstRatedFriend().name).charAt(0).toUpperCase() : '?'}
                                   </span>

@@ -1504,15 +1504,15 @@ const BirthdayGame = () => {
     }
   };
 
-  // Show celebration when all messages are read
+  // Show celebration when all messages are read (only for single player mode)
   useEffect(() => {
-    if (clickedBalls.size === friends.length && !showCelebration) {
+    if (!isMultiplayer && clickedBalls.size === friends.length && !showCelebration) {
       setShowCelebration(true);
       generateConfetti(100);
       setMagicMode(true);
       setTimeout(() => setMagicMode(false), 5000);
     }
-  }, [clickedBalls.size, showCelebration, friends.length]);
+  }, [clickedBalls.size, showCelebration, friends.length, isMultiplayer]);
 
   // Control audio playback
   useEffect(() => {

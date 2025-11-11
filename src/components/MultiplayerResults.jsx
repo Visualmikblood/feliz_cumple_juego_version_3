@@ -1,6 +1,31 @@
 import React, { useState, useRef } from 'react';
 import { Trophy, Crown, TrendingDown, Share, RotateCcw, MessageCircle, Star } from 'lucide-react';
 
+const scrollbarStyles = `
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thumb-white\\/30 {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  .scrollbar-track-transparent {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+`;
+
 const MultiplayerResults = ({
   multiplayerResults,
   allPlayersRatings,
@@ -64,7 +89,9 @@ const MultiplayerResults = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4 overflow-x-hidden">
+    <>
+      <style>{scrollbarStyles}</style>
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-4 overflow-x-hidden">
       {/* Confetti */}
       {confetti.map((piece) => (
         <div
@@ -170,7 +197,7 @@ const MultiplayerResults = ({
           {/* Messages Rankings */}
           <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
             <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">💌 Ranking Completo de Felicitaciones</h2>
-            <div className="space-y-4">
+            <div className="max-h-96 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
               {Object.entries(multiplayerResults.message_ratings || {})
                 .sort(([aId], [bId]) => (multiplayerResults.friendAverages[parseInt(bId)] || 0) - (multiplayerResults.friendAverages[parseInt(aId)] || 0))
                 .map(([messageId, messageData], index) => {
@@ -240,7 +267,7 @@ const MultiplayerResults = ({
           {/* Player Rankings */}
           <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl">
             <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">👥 Ranking Completo de Jugadores</h2>
-            <div className="space-y-4">
+            <div className="max-h-96 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
               {Object.entries(allPlayersRatings)
                 .sort(([,a], [,b]) => {
                   const avgA = Object.values(a.ratings).reduce((sum, val) => sum + val, 0) / Object.values(a.ratings).length;
@@ -311,7 +338,7 @@ const MultiplayerResults = ({
         {/* Complete Rankings Table */}
         <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 md:p-8 shadow-2xl mb-8 mx-4 md:mx-0">
           <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-6 text-center">📊 Tabla Completa de Calificaciones</h2>
-          <div className="overflow-x-auto -mx-4 md:mx-0">
+          <div className="max-h-96 overflow-auto -mx-4 md:mx-0 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
             <div className="px-4 md:px-0">
               <table className="w-full text-white min-w-[600px]">
               <thead>
@@ -569,6 +596,7 @@ const MultiplayerResults = ({
         </div>
       </div>
     </div>
+    </>
   );
 };
 
