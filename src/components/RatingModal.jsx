@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star, MessageCircle, Volume2, VolumeX, X } from 'lucide-react';
+import { API_BASE_URL } from '../utils/api';
 
 const RatingModal = ({
   selectedFriend,
