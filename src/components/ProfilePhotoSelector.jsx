@@ -1,11 +1,29 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, User } from 'lucide-react';
 
-const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName }) => {
+const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName, onFileChange }) => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(currentPhoto);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+
+  // Update previewUrl when currentPhoto changes
+  useEffect(() => {
+    setPreviewUrl(currentPhoto);
+  }, [currentPhoto]);
+
+  // Clear file inputs and preview when currentPhoto is null (when going back to edit)
+  useEffect(() => {
+    if (currentPhoto === null) {
+      setPreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
+      }
+    }
+  }, [currentPhoto]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -22,28 +40,24 @@ const ProfilePhotoSelector = ({ currentPhoto, onPhotoChange, playerName }) => {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target.result;
-        setPreviewUrl(result);
-        onPhotoChange(result);
-        setIsSelecting(false);
-      };
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      console.log('ProfilePhotoSelector: file select - setting previewUrl and calling onPhotoChange and onFileChange');
+      setPreviewUrl(url);
+      onPhotoChange(url);
+      onFileChange(file);
+      setIsSelecting(false);
     }
   };
 
   const handleCameraCapture = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target.result;
-        setPreviewUrl(result);
-        onPhotoChange(result);
-        setIsSelecting(false);
-      };
-      reader.readAsDataURL(file);
+      const url = URL.createObjectURL(file);
+      console.log('ProfilePhotoSelector: camera capture - setting previewUrl and calling onPhotoChange and onFileChange');
+      setPreviewUrl(url);
+      onPhotoChange(url);
+      onFileChange(file);
+      setIsSelecting(false);
     }
   };
 

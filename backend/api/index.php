@@ -54,7 +54,7 @@ try {
             // Crear directorio si no existe
             $uploadDir = '../uploads/profile-photos/';
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+                mkdir($uploadDir, 0777, true);
             }
 
             if (!isset($_FILES['photo'])) {
@@ -139,6 +139,16 @@ try {
                 $input['roomId'] ?? 0,
                 $input['playerId'] ?? 0,
                 $input['newDeadline'] ?? ''
+            );
+            break;
+
+        case 'players/update-photo':
+            if ($method !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+            $result = $gameRoom->updatePlayerPhoto(
+                $input['playerId'] ?? 0,
+                $input['profilePhoto'] ?? null
             );
             break;
             

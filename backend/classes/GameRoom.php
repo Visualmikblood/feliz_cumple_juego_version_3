@@ -327,6 +327,41 @@ class GameRoom {
     }
 
     /**
+     * Actualizar foto de perfil de un jugador
+     */
+    public function updatePlayerPhoto($playerId, $profilePhoto) {
+        try {
+            // Verificar que el jugador existe
+            $stmt = $this->pdo->prepare("
+                SELECT id, room_id, name FROM players WHERE id = ?
+            ");
+            $stmt->execute([$playerId]);
+            $player = $stmt->fetch();
+
+            if (!$player) {
+                return ['success' => false, 'error' => 'Jugador no encontrado'];
+            }
+
+            // Actualizar la foto del jugador
+            $stmt = $this->pdo->prepare("
+                UPDATE players SET profile_photo = ? WHERE id = ?
+            ");
+            $stmt->execute([$profilePhoto, $playerId]);
+
+            // Crear notificación de foto actualizada
+            $this->createNotification($player['room_id'], 'player_photo_updated',
+                "{$player['name']} ha actualizado su foto de perfil",
+                ['player_id' => $playerId, 'player_name' => $player['name']]
+            );
+
+            return ['success' => true, 'message' => 'Foto de perfil actualizada correctamente'];
+
+        } catch (Exception $e) {
+            return ['success' => false, 'error' => 'Error al actualizar foto de perfil: ' . $e->getMessage()];
+        }
+    }
+
+    /**
      * Obtener todas las salas disponibles
      */
     public function getAvailableRooms() {

@@ -1,6 +1,7 @@
   import React, { useEffect, useRef, useState } from 'react';
-import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award, Users, Clock } from 'lucide-react';
-import RatingModal from './components/RatingModal';
+  import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award, Users, Clock } from 'lucide-react';
+  import RatingModal from './components/RatingModal';
+  import { API_BASE_URL } from './utils/api';
 
 const RatingGame = ({
   friends,
@@ -260,7 +261,7 @@ const RatingGame = ({
                   >
                     {player.profile_photo ? (
                       <img
-                        src={`http://localhost:8000/uploads/profile-photos/${player.profile_photo}`}
+                        src={`${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}`}
                         alt={player.name}
                         className="w-4 h-4 object-cover rounded-full border border-white/50"
                         onError={(e) => {
@@ -331,6 +332,14 @@ const RatingGame = ({
             const IconComponent = friend.icon;
             const isClicked = clickedBalls.has(friend.id);
 
+            console.log('Rendering friend ball in RatingGame:', {
+              friendId: friend.id,
+              friendName: friend.player_name || friend.name,
+              profile_photo: friend.profile_photo,
+              photo_url: friend.photo_url,
+              isMultiplayer
+            });
+
             return (
               <div key={friend.id} className="flex flex-col items-center">
                 <button
@@ -355,10 +364,22 @@ const RatingGame = ({
                 >
                   {friend.profile_photo ? (
                     <img
-                      src={`http://localhost:8000/uploads/profile-photos/${friend.profile_photo}`}
+                      src={`${API_BASE_URL}/uploads/profile-photos/${friend.profile_photo}?t=${Date.now()}`}
                       alt={friend.player_name || friend.name}
                       className="w-full h-full object-cover rounded-full"
                       onError={(e) => {
+                        console.log('Image failed to load in RatingGame for friend:', friend.player_name || friend.name, 'src:', `${API_BASE_URL}/uploads/profile-photos/${friend.profile_photo}?t=${Date.now()}`);
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : friend.photo_url ? (
+                    <img
+                      src={friend.photo_url}
+                      alt={friend.player_name || friend.name}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        console.log('Image failed to load in RatingGame for friend:', friend.player_name || friend.name, 'src:', friend.photo_url);
                         e.target.style.display = 'none';
                         e.target.nextElementSibling.style.display = 'flex';
                       }}
@@ -692,12 +713,33 @@ const RatingGame = ({
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
             <div className="text-center mb-6 flex flex-col items-center relative">
+              {(() => {
+                console.log('Rendering message modal for friend:', {
+                  friendId: selectedFriend.id,
+                  friendName: selectedFriend.player_name || selectedFriend.name,
+                  photo_url: selectedFriend.photo_url,
+                  profile_photo: selectedFriend.profile_photo
+                });
+                return null;
+              })()}
               <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
                 {selectedFriend.photo_url ? (
                   <img
                     src={selectedFriend.photo_url}
                     alt={selectedFriend.player_name || selectedFriend.name}
                     className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      console.log('Image failed to load in message modal for friend:', selectedFriend.player_name || selectedFriend.name, 'src:', selectedFriend.photo_url);
+                    }}
+                  />
+                ) : selectedFriend.profile_photo ? (
+                  <img
+                    src={`${API_BASE_URL}/uploads/profile-photos/${selectedFriend.profile_photo}?t=${Date.now()}`}
+                    alt={selectedFriend.player_name || selectedFriend.name}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      console.log('Image failed to load in message modal for friend:', selectedFriend.player_name || selectedFriend.name, 'src:', `${API_BASE_URL}/uploads/profile-photos/${selectedFriend.profile_photo}?t=${Date.now()}`);
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">

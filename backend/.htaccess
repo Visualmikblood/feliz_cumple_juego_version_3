@@ -5,6 +5,9 @@ Header always set Access-Control-Allow-Origin "*"
 Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
 Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 
+# Servir archivos de uploads desde la raíz del proyecto
+RewriteRule ^uploads/(.*)$ ../uploads/$1 [L]
+
 # Redirigir todas las peticiones a api/index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

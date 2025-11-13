@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, Target, Award, Users, GamepadIcon, Crown, TrendingDown } from 'lucide-react';
+import { API_BASE_URL } from './utils/api';
 
 
 
@@ -143,12 +144,33 @@ const MultiplayerGame = ({
               <div key={player.id} className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {player.isHost && <Crown className="w-5 h-5 text-yellow-400" />}
-                  <span className="text-white font-semibold text-lg">{player.name}</span>
-                  {player.id === currentPlayerId && <span className="text-yellow-300 text-sm">(Tú)</span>}
+                  <div className="flex items-center gap-3">
+                    {player.profile_photo ? (
+                      <img
+                        src={`${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}?t=${Date.now()}`}
+                        alt={player.name}
+                        className="w-10 h-10 object-cover rounded-full border-2 border-white"
+                        onError={(e) => {
+                          console.log('Image failed to load for player:', player.name, 'src:', `${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}?t=${Date.now()}`);
+                          e.target.style.display = 'none';
+                          e.target.nextElementSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: player.profile_photo ? 'none' : 'flex' }}>
+                      <span className="text-white text-sm font-bold">
+                        {player.name?.charAt(0)?.toUpperCase() || '?'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-white font-semibold text-lg">{player.name}</span>
+                      {player.id === currentPlayerId && <span className="text-yellow-300 text-sm block">(Tú)</span>}
+                    </div>
+                  </div>
                 </div>
                 <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  player.isReady 
-                    ? 'bg-green-500 text-white' 
+                  player.isReady
+                    ? 'bg-green-500 text-white'
                     : 'bg-gray-500 text-white'
                 }`}>
                   {player.isReady ? '✓ Listo' : '⏳ Esperando'}

@@ -57,15 +57,26 @@ const BirthdayGame = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [playerPhoto, setPlayerPhoto] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handlePlayerPhotoChange = (photo) => {
+    console.log('handlePlayerPhotoChange called with:', photo ? 'has photo' : 'null');
+    setPlayerPhoto(photo);
+  };
+
+  const handleFileChange = (file) => {
+    console.log('handleFileChange called with file:', file ? file.name : 'null');
+    setSelectedFile(file);
+  };
 
   // Estados para mensajes personalizados
   const [playerMessage, setPlayerMessage] = useState('');
   const [playerMessages, setPlayerMessages] = useState([]);
   const [hasSubmittedMessage, setHasSubmittedMessage] = useState(false);
-  
+
   // Sistema de notificaciones
   const { notifications: localNotifications, addNotification, dismissNotification, clearAllNotifications } = useNotifications();
-  
+
   // Notification polling
   const notificationPolling = useNotificationPolling(
     roomData?.room?.id,
@@ -630,7 +641,7 @@ const BirthdayGame = () => {
     setShowAvailableRooms(false);
     setLoading(false);
     setError(null);
-    setPlayerPhoto(null);
+    handlePlayerPhotoChange(null);
 
     // Mantener el nombre del cumpleañero
     // setBirthdayPersonName('Miguel'); // No resetear el nombre
@@ -639,6 +650,7 @@ const BirthdayGame = () => {
     setPlayerMessage('');
     setPlayerMessages([]);
     setHasSubmittedMessage(false);
+    setSelectedFile(null);
 
     // Mantener el nombre del cumpleañero
     // setBirthdayPersonName('Miguel'); // No resetear el nombre
@@ -695,27 +707,20 @@ const BirthdayGame = () => {
       let profilePhotoUrl = null;
 
       // Si hay una foto seleccionada, subirla primero
-      if (playerPhoto && playerPhoto.startsWith('data:')) {
+      if (selectedFile) {
         try {
-          // Convertir base64 a blob
-          const response = await fetch(playerPhoto);
-          const blob = await response.blob();
-          const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
-
-          const uploadResponse = await uploadAPI.profilePhoto(file);
+          const uploadResponse = await uploadAPI.profilePhoto(selectedFile);
           if (uploadResponse.success) {
             profilePhotoUrl = uploadResponse.data.photo_url;
+          } else {
+            setError('Error al subir la foto. Inténtalo de nuevo.');
+            return;
           }
         } catch (uploadError) {
           console.error('Error subiendo foto:', uploadError);
-          // Continuar sin foto si falla la subida
+          setError('Error al subir la foto. Inténtalo de nuevo.');
+          return;
         }
-      } else if (playerPhoto && !playerPhoto.startsWith('/uploads/')) {
-        // Si ya es una URL (pero no del backend), usarla directamente
-        profilePhotoUrl = playerPhoto;
-      } else if (playerPhoto && playerPhoto.startsWith('/uploads/')) {
-        // Si es una URL del backend, extraer solo el nombre del archivo
-        profilePhotoUrl = playerPhoto.replace('/uploads/profile-photos/', '');
       }
 
       // Enviar la fecha completa en formato ISO
@@ -782,27 +787,22 @@ const BirthdayGame = () => {
       let profilePhotoUrl = null;
 
       // Si hay una foto seleccionada, subirla primero
-      if (playerPhoto && playerPhoto.startsWith('data:')) {
+      if (selectedFile) {
         try {
-          // Convertir base64 a blob
-          const response = await fetch(playerPhoto);
-          const blob = await response.blob();
-          const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
-
-          const uploadResponse = await uploadAPI.profilePhoto(file);
+          const uploadResponse = await uploadAPI.profilePhoto(selectedFile);
           if (uploadResponse.success) {
             profilePhotoUrl = uploadResponse.data.photo_url;
+            // Actualizar la foto del jugador en la base de datos
+            try {
+              await roomsAPI.updatePlayerPhoto(currentPlayerId, profilePhotoUrl);
+            } catch (updateError) {
+              console.error('Error actualizando foto del jugador:', updateError);
+            }
           }
         } catch (uploadError) {
           console.error('Error subiendo foto:', uploadError);
           // Continuar sin foto si falla la subida
         }
-      } else if (playerPhoto && !playerPhoto.startsWith('/uploads/')) {
-        // Si ya es una URL (pero no del backend), usarla directamente
-        profilePhotoUrl = playerPhoto;
-      } else if (playerPhoto && playerPhoto.startsWith('/uploads/')) {
-        // Si es una URL del backend, extraer solo el nombre del archivo
-        profilePhotoUrl = playerPhoto.replace('/uploads/profile-photos/', '');
       }
 
       console.log('Llamando a roomsAPI.join...');
@@ -881,7 +881,7 @@ const BirthdayGame = () => {
   };
 
   // Función para obtener información de la sala
-  const getRoomInfo = async (roomId) => {
+  const getRoomInfo = async (roomId, overrideCurrentPlayerId = null, overridePlayerPhoto = null) => {
     try {
       console.log('Obteniendo información de la sala:', roomId);
       const response = await roomsAPI.getInfo(roomId);
@@ -890,6 +890,30 @@ const BirthdayGame = () => {
       if (response.success) {
         const newRoomData = response.data;
         console.log('Datos de la sala actualizados:', newRoomData.players.length, 'jugadores, estado:', newRoomData.room.status);
+
+        // La foto ya se actualiza en la base de datos, así que debería venir correcta del servidor
+        // Solo hacer override si se proporciona específicamente
+        if (overridePlayerPhoto) {
+          const playerIdToUse = overrideCurrentPlayerId || currentPlayerId;
+          const currentPlayer = newRoomData.players.find(p => p.id === playerIdToUse);
+
+          if (currentPlayer) {
+            console.log('Applying photo override:', {
+              playerId: playerIdToUse,
+              overridePhoto: overridePlayerPhoto,
+              currentServerPhoto: currentPlayer.profile_photo
+            });
+
+            const photoNormalized = overridePlayerPhoto.startsWith('/uploads/profile-photos/')
+              ? overridePlayerPhoto.replace('/uploads/profile-photos/', '')
+              : overridePlayerPhoto;
+
+            newRoomData.players = newRoomData.players.map(p =>
+              p.id === playerIdToUse ? { ...p, profile_photo: photoNormalized } : p
+            );
+          }
+        }
+
         setRoomData(newRoomData);
         setPlayers(newRoomData.players);
 
@@ -956,7 +980,13 @@ const BirthdayGame = () => {
   };
 
   // Función para volver a entrar a una sala existente
-  const rejoinRoom = async (roomCode) => {
+  const rejoinRoom = async (roomCode, newPhoto = null) => {
+    console.log('=== REJOIN ROOM STARTED ===');
+    console.log('Room code:', roomCode);
+    console.log('New photo provided:', !!newPhoto);
+    console.log('Player name:', playerName);
+    console.log('Current players:', players);
+
     if (!validators.roomCode(roomCode)) {
       setError('Por favor ingresa un código de sala válido (6 caracteres)');
       return;
@@ -981,10 +1011,78 @@ const BirthdayGame = () => {
       // Verificar si el jugador ya está en la sala
       const existingPlayer = roomInfo.data.players.find(p => p.name === playerName);
       if (existingPlayer) {
+        // Si hay una nueva foto, subirla y actualizar la del jugador
+        let updatedProfilePhoto = existingPlayer.profile_photo;
+        if (newPhoto && newPhoto.startsWith('data:')) {
+          try {
+            console.log('Subiendo nueva foto para re-entrada...');
+            // Convertir base64 a blob
+            const response = await fetch(newPhoto);
+            const blob = await response.blob();
+            const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+
+            const uploadResponse = await uploadAPI.profilePhoto(file);
+            console.log('Respuesta de subida:', uploadResponse);
+            if (uploadResponse.success) {
+              updatedProfilePhoto = uploadResponse.data.photo_url;
+              console.log('Foto subida exitosamente:', updatedProfilePhoto);
+            } else {
+              console.error('Error en respuesta de subida:', uploadResponse);
+            }
+          } catch (uploadError) {
+            console.error('Error subiendo nueva foto:', uploadError);
+            // No fallar completamente, continuar con la foto existente
+          }
+        }
+
         // Si ya está en la sala, restaurar la sesión directamente
         setCurrentPlayerId(existingPlayer.id);
         setSessionId(existingPlayer.session_id || 'restored');
         setIsHost(existingPlayer.is_host === 1);
+
+        // Actualizar la foto del jugador si se subió una nueva
+        if (updatedProfilePhoto !== existingPlayer.profile_photo) {
+          console.log('Actualizando foto del jugador en base de datos...');
+          console.log('Updated photo:', updatedProfilePhoto);
+          console.log('Existing player photo:', existingPlayer.profile_photo);
+
+          // Actualizar la foto en la base de datos
+          try {
+            const updateResponse = await roomsAPI.updatePlayerPhoto(existingPlayer.id, updatedProfilePhoto);
+            console.log('Respuesta de actualización de foto:', updateResponse);
+            if (updateResponse.success) {
+              console.log('Foto actualizada exitosamente en base de datos');
+            } else {
+              console.error('Error actualizando foto en base de datos:', updateResponse.error);
+            }
+          } catch (updateError) {
+            console.error('Error al actualizar foto en base de datos:', updateError);
+            // Continuar de todas formas
+          }
+
+          handlePlayerPhotoChange(updatedProfilePhoto);
+          // Actualizar localmente la foto del jugador en la lista de players
+          setPlayers(prevPlayers => {
+            console.log('Prev players:', prevPlayers);
+            if (!prevPlayers) {
+              console.log('Prev players is null/undefined, skipping update');
+              return prevPlayers;
+            }
+            const updatedPlayers = prevPlayers.map(p =>
+              p.id === existingPlayer.id
+                ? { ...p, profile_photo: updatedProfilePhoto.replace('/uploads/profile-photos/', '') }
+                : p
+            );
+            console.log('Updated players:', updatedPlayers);
+            return updatedPlayers;
+          });
+          // Actualizar roomInfo.data.players también para que getRoomInfo tenga la foto correcta
+          roomInfo.data.players = roomInfo.data.players.map(p =>
+            p.id === existingPlayer.id
+              ? { ...p, profile_photo: updatedProfilePhoto.replace('/uploads/profile-photos/', '') }
+              : p
+          );
+        }
 
         // Determinar el estado correcto basado en el estado de la sala y si el jugador ya envió mensaje
         let correctGameState = 'waiting';
@@ -1051,7 +1149,7 @@ const BirthdayGame = () => {
 
         // Solo obtener información adicional si no estamos en playing (ya tenemos los datos)
         if (correctGameState !== 'playing') {
-          await getRoomInfo(roomInfo.data.room.id);
+          await getRoomInfo(roomInfo.data.room.id, existingPlayer.id);
         }
 
         // Si estamos en results, obtener resultados
@@ -1094,9 +1192,14 @@ const BirthdayGame = () => {
         }
       }
     } catch (error) {
+      console.error('=== REJOIN ROOM ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       setError(handleApiError(error, 'Error al volver a entrar a la sala'));
     } finally {
       setLoading(false);
+      console.log('=== REJOIN ROOM FINISHED ===');
     }
   };
 
@@ -1173,6 +1276,7 @@ const BirthdayGame = () => {
 
     // Mostrar modal de confirmación en lugar de enviar directamente
     setShowConfirmModal(true);
+
     return false; // No enviar aún
   };
 
@@ -1237,8 +1341,11 @@ const BirthdayGame = () => {
     setGameStarted(false);
     // Limpiar cualquier error anterior
     setError(null);
-    // Limpiar el mensaje para permitir edición completa
+    // Limpiar el mensaje, nombre y foto para permitir edición completa
     setPlayerMessage('');
+    setPlayerName('');
+    handlePlayerPhotoChange(null);
+    setSelectedFile(null);
     setHasSubmittedMessage(false);
   };
 
@@ -1764,7 +1871,8 @@ const BirthdayGame = () => {
               <label className="block text-white text-lg font-semibold mb-2">Foto de perfil:</label>
               <ProfilePhotoSelector
                 currentPhoto={playerPhoto}
-                onPhotoChange={setPlayerPhoto}
+                onPhotoChange={handlePlayerPhotoChange}
+                onFileChange={handleFileChange}
                 playerName={playerName}
               />
             </div>
@@ -1797,7 +1905,12 @@ const BirthdayGame = () => {
                   <button
                     onClick={() => {
                       console.log('Uniéndose a sala:', gameRoomId, 'con nombre:', playerName);
-                      joinRoom();
+                      if (playerPhoto) {
+                        // Si hay foto seleccionada, usar rejoinRoom para subirla
+                        rejoinRoom(gameRoomId, playerPhoto);
+                      } else {
+                        joinRoom();
+                      }
                     }}
                     disabled={!playerName.trim() || !gameRoomId.trim() || loading}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
@@ -1808,7 +1921,7 @@ const BirthdayGame = () => {
                   <button
                     onClick={() => {
                       console.log('Volviendo a entrar a sala:', gameRoomId, 'con nombre:', playerName);
-                      rejoinRoom(gameRoomId);
+                      rejoinRoom(gameRoomId, playerPhoto);
                     }}
                     disabled={!playerName.trim() || !gameRoomId.trim() || loading}
                     className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
@@ -1902,42 +2015,52 @@ const BirthdayGame = () => {
 
           <div className="space-y-4 mb-8">
             <h3 className="text-xl font-bold text-white text-center">Jugadores ({players.length}):</h3>
-            {players.map((player) => (
-              <div key={player.id} className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {player.isHost && <Crown className="w-5 h-5 text-yellow-400" />}
+            {players.map((player) => {
+              console.log('Rendering player in waiting room:', {
+                playerId: player.id,
+                playerName: player.name,
+                profile_photo: player.profile_photo,
+                currentPlayerId,
+                isCurrentPlayer: player.id === currentPlayerId
+              });
+              return (
+                <div key={player.id} className="bg-white/10 rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {player.profile_photo ? (
-                      <img
-                        src={`${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}`}
-                        alt={player.name}
-                        className="w-10 h-10 object-cover rounded-full border-2 border-white"
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.nextElementSibling.style.display = 'flex';
-                        }}
-                      />
-                    ) : null}
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: player.profile_photo ? 'none' : 'flex' }}>
-                      <span className="text-white text-sm font-bold">
-                        {player.name?.charAt(0)?.toUpperCase() || '?'}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-white font-semibold text-lg">{player.name}</span>
-                      {player.id === currentPlayerId && <span className="text-yellow-300 text-sm block">(Tú)</span>}
+                    {player.isHost && <Crown className="w-5 h-5 text-yellow-400" />}
+                    <div className="flex items-center gap-3">
+                      {player.profile_photo ? (
+                        <img
+                          src={`${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}?t=${Date.now()}`}
+                          alt={player.name}
+                          className="w-10 h-10 object-cover rounded-full border-2 border-white"
+                          onError={(e) => {
+                            console.log('Image failed to load for player:', player.name, 'src:', `${API_BASE_URL}/uploads/profile-photos/${player.profile_photo}?t=${Date.now()}`);
+                            e.target.style.display = 'none';
+                            e.target.nextElementSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-white" style={{ display: player.profile_photo ? 'none' : 'flex' }}>
+                        <span className="text-white text-sm font-bold">
+                          {player.name?.charAt(0)?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-white font-semibold text-lg">{player.name}</span>
+                        {player.id === currentPlayerId && <span className="text-yellow-300 text-sm block">(Tú)</span>}
+                      </div>
                     </div>
                   </div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    player.isReady
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-500 text-white'
+                  }`}>
+                    {player.isReady ? '✓ Listo' : '⏳ Esperando'}
+                  </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  player.isReady
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-500 text-white'
-                }`}>
-                  {player.isReady ? '✓ Listo' : '⏳ Esperando'}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="text-center space-y-4">
@@ -2070,20 +2193,20 @@ const BirthdayGame = () => {
                 {/* Vista previa del mensaje */}
                 <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 mb-6">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg overflow-hidden relative">
                       {playerPhoto ? (
                         <img
+                          key={Date.now()} // Force re-render each time modal opens
                           src={playerPhoto}
                           alt="Tu foto"
                           className="w-full h-full object-cover rounded-full"
                         />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-2xl font-bold">
-                            {playerName ? playerName.charAt(0).toUpperCase() : '?'}
-                          </span>
-                        </div>
-                      )}
+                      ) : null}
+                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center absolute inset-0" style={{ display: playerPhoto ? 'none' : 'flex' }}>
+                        <span className="text-white text-2xl font-bold">
+                          {playerName ? playerName.charAt(0).toUpperCase() : '?'}
+                        </span>
+                      </div>
                     </div>
                     <div>
                       <h4 className="text-xl font-bold text-white">{playerName}</h4>

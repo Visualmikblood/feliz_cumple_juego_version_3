@@ -130,16 +130,24 @@ const MultiplayerResults = ({
             <h2 className="text-xl md:text-3xl font-bold text-white mb-6 text-center">🏆 Ranking de Felicitaciones</h2>
 
             {/* Best Message */}
+            {(() => {
+              console.log('Rendering best friend in results:', {
+                name: multiplayerResults.bestFriend.name,
+                photo: multiplayerResults.bestFriend.photo
+              });
+              return null;
+            })()}
             <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-6 mb-6 transform hover:scale-105 transition-transform">
               <div className="flex items-center gap-4">
                 <Crown className="w-12 h-12 text-yellow-300 animate-bounce" />
                 <div className="flex items-center gap-4">
                   {multiplayerResults.bestFriend.photo ? (
                     <img
-                      src={`http://localhost:8000/uploads/profile-photos/${multiplayerResults.bestFriend.photo}`}
+                      src={`${API_BASE_URL}/uploads/profile-photos/${multiplayerResults.bestFriend.photo}`}
                       alt={multiplayerResults.bestFriend.name}
                       className="w-16 h-16 object-cover rounded-full border-4 border-white"
                       onError={(e) => {
+                        console.log('Image failed to load for best friend:', multiplayerResults.bestFriend.name, 'src:', `http://localhost:8000/uploads/profile-photos/${multiplayerResults.bestFriend.photo}`);
                         e.target.style.display = 'none';
                         e.target.nextElementSibling.style.display = 'flex';
                       }}
@@ -168,7 +176,7 @@ const MultiplayerResults = ({
                 <div className="flex items-center gap-4">
                   {multiplayerResults.worstFriend.photo ? (
                     <img
-                      src={`http://localhost:8000/uploads/profile-photos/${multiplayerResults.worstFriend.photo}`}
+                      src={`${API_BASE_URL}/uploads/profile-photos/${multiplayerResults.worstFriend.photo}`}
                       alt={multiplayerResults.worstFriend.name}
                       className="w-16 h-16 object-cover rounded-full border-4 border-white"
                       onError={(e) => {
@@ -223,7 +231,7 @@ const MultiplayerResults = ({
                           <div className="flex items-center gap-3">
                             {messageData.photo_url ? (
                               <img
-                                src={`http://localhost:8000/uploads/profile-photos/${messageData.photo_url}`}
+                                src={`${API_BASE_URL}/uploads/profile-photos/${messageData.photo_url}`}
                                 alt={messageData.friend_name}
                                 className="w-10 h-10 object-cover rounded-full border-2 border-white"
                                 onError={(e) => {
@@ -299,7 +307,7 @@ const MultiplayerResults = ({
                           <div className="flex items-center gap-3">
                             {playerData.profile_photo ? (
                               <img
-                                src={`http://localhost:8000/uploads/profile-photos/${playerData.profile_photo}`}
+                                src={`${API_BASE_URL}/uploads/profile-photos/${playerData.profile_photo}`}
                                 alt={playerData.name}
                                 className="w-10 h-10 object-cover rounded-full border-2 border-white"
                                 onError={(e) => {
@@ -393,7 +401,7 @@ const MultiplayerResults = ({
                   <div className="flex items-center gap-4 mb-4">
                     {messageData.photo_url ? (
                       <img
-                        src={`http://localhost:8000/uploads/profile-photos/${messageData.photo_url}`}
+                        src={`/uploads/profile-photos/${messageData.photo_url}`}
                         alt={messageData.friend_name}
                         className="w-12 h-12 object-cover rounded-full border-2 border-white"
                         onError={(e) => {
@@ -448,7 +456,7 @@ const MultiplayerResults = ({
                 <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
                   {selectedMessage.photo_url ? (
                     <img
-                      src={`http://localhost:8000/uploads/profile-photos/${selectedMessage.photo_url}`}
+                      src={`${API_BASE_URL}/uploads/profile-photos/${selectedMessage.photo_url}`}
                       alt={selectedMessage.friend_name}
                       className="w-full h-full object-cover rounded-full"
                     />
@@ -580,8 +588,8 @@ const MultiplayerResults = ({
                 }}
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-xl text-base md:text-lg shadow-lg transform hover:scale-105 transition-all duration-300"
               >
-                <RotateCcw className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
-                Volver a Calificar
+                <Award className="w-5 h-5 md:w-6 md:h-6 inline mr-2" />
+                Volver a la Sala de las Bolitas
               </button>
             )}
 

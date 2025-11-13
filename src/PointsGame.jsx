@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Gift, Heart, Star, Sparkles, PartyPopper, Cake, Volume2, VolumeX, RotateCcw, Share, Trophy, Zap, ThumbsDown, GamepadIcon, Target, Award } from 'lucide-react';
+import { API_BASE_URL } from './utils/api';
 
 const PointsGame = ({
   friends,
@@ -205,17 +206,25 @@ const PointsGame = ({
                     isClicked ? `animate-bounce ${ballAnimations[friend.id] || ''} ring-4 ring-white/60` : 'hover:animate-pulse'
                   } ${magicMode ? 'animate-pulse ring-4 ring-yellow-300' : ''}`}
                 >
-                  <img
-                    src={friend.photo}
-                    alt={friend.name}
-                    className="w-full h-full object-cover rounded-full"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
-                    }}
-                  />
-                  <div className={`w-full h-full ${friend.color} rounded-full flex items-center justify-center ${friend.photo ? 'hidden' : 'flex'}`}>
-                    <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                  {friend.photo || friend.profile_photo ? (
+                    <img
+                      src={friend.photo || (friend.profile_photo ? `${API_BASE_URL}/uploads/profile-photos/${friend.profile_photo}` : '')}
+                      alt={friend.name || friend.player_name}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`w-full h-full ${friend.color || 'bg-gray-400'} rounded-full flex items-center justify-center ${friend.photo || friend.profile_photo ? 'hidden' : 'flex'}`}>
+                    {friend.icon ? (
+                      <IconComponent className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                    ) : (
+                      <span className="text-white text-lg font-bold">
+                        {(friend.name || friend.player_name || '?').charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
 
                   {isClicked && (
@@ -242,7 +251,7 @@ const PointsGame = ({
                 )}
 
                 <p className="text-white font-semibold mt-3 text-sm text-center">
-                  {friend.name}
+                  {friend.name || friend.player_name}
                 </p>
               </div>
             );
@@ -328,17 +337,25 @@ const PointsGame = ({
           <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
             <div className="text-center mb-6 flex flex-col items-center relative">
               <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse overflow-hidden relative">
-                <img
-                  src={selectedFriend.photo}
-                  alt={selectedFriend.name}
-                  className="w-full h-full object-cover rounded-full"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-                <div className={`w-full h-full ${selectedFriend.color} rounded-full flex items-center justify-center ${selectedFriend.photo ? 'hidden' : 'flex'}`}>
-                  {React.createElement(selectedFriend.icon, { className: "w-10 h-10 text-white" })}
+                {selectedFriend.photo || selectedFriend.profile_photo ? (
+                  <img
+                    src={selectedFriend.photo || (selectedFriend.profile_photo ? `${API_BASE_URL}/uploads/profile-photos/${selectedFriend.profile_photo}` : '')}
+                    alt={selectedFriend.name || selectedFriend.player_name}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div className={`w-full h-full ${selectedFriend.color || 'bg-gray-400'} rounded-full flex items-center justify-center ${selectedFriend.photo || selectedFriend.profile_photo ? 'hidden' : 'flex'}`}>
+                  {selectedFriend.icon ? (
+                    React.createElement(selectedFriend.icon, { className: "w-10 h-10 text-white" })
+                  ) : (
+                    <span className="text-white text-2xl font-bold">
+                      {(selectedFriend.name || selectedFriend.player_name || '?').charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 {/* Speaker button */}
                 <button
@@ -360,7 +377,7 @@ const PointsGame = ({
                 </button>
               </div>
               <h3 className="text-3xl font-bold text-gray-800 mb-2">
-                Mensaje de {selectedFriend.name} 💌
+                Mensaje de {selectedFriend.name || selectedFriend.player_name} 💌
               </h3>
               <div className="mb-4">
                 <p className={`font-bold text-lg ${ballPoints[selectedFriend.id] >= 0 ? 'text-green-600' : 'text-red-600'}`}>

@@ -23,7 +23,7 @@ const RatingModal = ({
           <div className="flex items-center gap-4">
             {selectedFriend.profile_photo ? (
               <img
-                src={`http://localhost:8000/uploads/profile-photos/${selectedFriend.profile_photo}`}
+                src={`${API_BASE_URL}/uploads/profile-photos/${selectedFriend.profile_photo}`}
                 alt={selectedFriend.player_name || selectedFriend.name}
                 className="w-16 h-16 object-cover rounded-full border-4 border-white shadow-lg"
                 onError={(e) => {

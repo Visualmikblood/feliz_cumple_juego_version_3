@@ -15,9 +15,9 @@ const API_CONFIG = {
 const getApiBaseUrl = () => {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return API_CONFIG.localhost;
+        return 'http://localhost:8000';
     }
-    return API_CONFIG.production;
+    return 'https://tu-sitio.infinityfreeapp.com/backend';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
@@ -107,6 +107,17 @@ export const roomsAPI = {
                 roomId,
                 playerId,
                 newDeadline
+            })
+        });
+    },
+
+    // Actualizar foto de perfil de jugador
+    updatePlayerPhoto: async (playerId, profilePhoto) => {
+        return apiRequest('players/update-photo', {
+            method: 'POST',
+            body: JSON.stringify({
+                playerId,
+                profilePhoto
             })
         });
     }
@@ -210,6 +221,7 @@ export const uploadAPI = {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData
+                // No set Content-Type, let the browser set it for FormData
             });
 
             const data = await response.json();
