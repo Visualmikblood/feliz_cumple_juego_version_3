@@ -159,9 +159,6 @@ const BirthdayGame = () => {
           // Verificar si todos los jugadores han terminado sus calificaciones
           checkIfAllPlayersFinished();
         }
-
-        // Actualizar tiempo restante
-        setTimeRemaining(calculateTimeRemaining());
       }, 2000);
 
       setGameStateInterval(interval);
@@ -189,8 +186,6 @@ const BirthdayGame = () => {
       const interval = setInterval(() => {
         console.log('Actualizando lista de jugadores...');
         getRoomInfo(roomData.room.id);
-        // Actualizar tiempo restante
-        setTimeRemaining(calculateTimeRemaining());
       }, 3000);
 
       setRoomUpdateInterval(interval);
@@ -205,6 +200,21 @@ const BirthdayGame = () => {
         clearInterval(roomUpdateInterval);
         setRoomUpdateInterval(null);
       }
+    }
+  }, [isMultiplayer, gameState, roomData?.room?.id]);
+
+  // Actualización del tiempo restante cada segundo
+  useEffect(() => {
+    if (isMultiplayer && roomData?.room?.id && (gameState === 'waiting' || gameState === 'writing' || gameState === 'playing')) {
+      console.log('Iniciando actualización del tiempo restante cada segundo');
+      const interval = setInterval(() => {
+        setTimeRemaining(calculateTimeRemaining());
+      }, 1000);
+
+      return () => {
+        console.log('Deteniendo actualización del tiempo restante');
+        clearInterval(interval);
+      };
     }
   }, [isMultiplayer, gameState, roomData?.room?.id]);
 
