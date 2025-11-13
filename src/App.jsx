@@ -29,7 +29,7 @@ const BirthdayGame = () => {
   const [friendRatings, setFriendRatings] = useState({});
   const [currentRating, setCurrentRating] = useState(50);
   const [showRatingModal, setShowRatingModal] = useState(false);
-  const [birthdayPersonName, setBirthdayPersonName] = useState('Miguel'); // Nombre del cumpleañero
+  const [birthdayPersonName, setBirthdayPersonName] = useState(''); // Nombre del cumpleañero
   const audioRef = useRef(null);
   const utteranceRef = useRef(null);
 
@@ -1697,7 +1697,7 @@ const BirthdayGame = () => {
               type="text"
               value={birthdayPersonName}
               onChange={(e) => setBirthdayPersonName(e.target.value)}
-              placeholder="Ingresa el nombre del cumpleañero"
+              placeholder="¿Quién cumple años?"
               className="w-full max-w-md px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
             />
           </div>
