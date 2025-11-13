@@ -1287,6 +1287,25 @@ const BirthdayGame = () => {
     setError(null);
 
     try {
+      // Si hay una nueva foto seleccionada, subirla primero
+      if (selectedFile) {
+        try {
+          const uploadResponse = await uploadAPI.profilePhoto(selectedFile);
+          if (uploadResponse.success) {
+            const profilePhotoUrl = uploadResponse.data.photo_url;
+            // Actualizar la foto del jugador en la base de datos
+            await roomsAPI.updatePlayerPhoto(currentPlayerId, profilePhotoUrl);
+            console.log('Foto del jugador actualizada:', profilePhotoUrl);
+          } else {
+            console.error('Error al subir la nueva foto:', uploadResponse.error);
+            // Continuar sin la foto, no fallar completamente
+          }
+        } catch (uploadError) {
+          console.error('Error subiendo nueva foto:', uploadError);
+          // Continuar sin la foto, no fallar completamente
+        }
+      }
+
       const response = await playerMessagesAPI.save(roomData.room.id, currentPlayerId, playerMessage.trim());
 
       if (response.success) {
