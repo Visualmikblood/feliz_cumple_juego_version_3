@@ -575,6 +575,15 @@ const BirthdayGame = () => {
     console.log('=== MULTIPLAYER BUTTON CLICKED ===');
     console.log('Current state:', { gameMode, isMultiplayer, gameState, gameStarted });
 
+    // Verificar que se haya puesto el nombre del cumpleañero
+    if (!birthdayPersonName.trim()) {
+      setError('Por favor escribe el nombre de la persona que cumple años antes de jugar.');
+      return;
+    }
+
+    // Limpiar cualquier error anterior
+    setError(null);
+
     // Forzar el estado correcto directamente
     setGameMode('multiplayer');
     setIsMultiplayer(true);
@@ -1688,6 +1697,12 @@ const BirthdayGame = () => {
             </p>
           </div>
 
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-8 mx-auto max-w-md">
+              <p className="text-red-200 text-center font-semibold">{error}</p>
+            </div>
+          )}
+
           {/* Campo para cambiar el nombre del cumpleañero */}
           <div className="mb-8 flex flex-col items-center">
             <label className="block text-white text-lg font-semibold mb-2 text-center">
@@ -1696,7 +1711,10 @@ const BirthdayGame = () => {
             <input
               type="text"
               value={birthdayPersonName}
-              onChange={(e) => setBirthdayPersonName(e.target.value)}
+              onChange={(e) => {
+                setBirthdayPersonName(e.target.value);
+                if (error) setError(null); // Limpiar error cuando el usuario empiece a escribir
+              }}
               placeholder="¿Quién cumple años?"
               className="w-full max-w-md px-4 py-3 rounded-xl text-gray-800 text-lg font-medium bg-white border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors text-center"
             />
@@ -1754,7 +1772,7 @@ const BirthdayGame = () => {
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg transform hover:scale-105 transition-all duration-300 w-full"
                   >
                     <Users className="w-5 h-5 inline mr-2" />
-                    ¡Jugar Multijugador para felicitar a {birthdayPersonName}!
+                    ¡Jugar Multijugador para felicitar a {birthdayPersonName || 'alguien'}!
                   </button>
                 </div>
               </div>
