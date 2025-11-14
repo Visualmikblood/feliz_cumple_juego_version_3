@@ -55,7 +55,13 @@ const RatingGame = ({
   birthdayPersonName,
   isHost = false,
   updateRoomDeadline,
-  playerName
+  playerName,
+  // Compartir props
+  showShareModal = false,
+  setShowShareModal,
+  shareMessageText = '',
+  setShareMessageText,
+  confirmShare
 }) => {
       // Función local para manejar el submit si no se pasa como prop
   const localHandleRatingSubmit = handleRatingSubmit || (() => {
@@ -964,6 +970,56 @@ const RatingGame = ({
           transition: all 0.15s ease-out;
         }
       `}</style>
+
+      {/* Modal de compartir */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 rounded-3xl p-8 max-w-2xl w-full shadow-2xl transform animate-gentle-bounce max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-6">
+              <h3 className="text-3xl font-bold text-white mb-4">
+                📤 Compartir Resultados
+              </h3>
+              <p className="text-white/80 mb-6">
+                Edita tu mensaje antes de compartirlo
+              </p>
+            </div>
+
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 mb-6">
+              <label className="block text-white text-lg font-semibold mb-2">
+                Mensaje a compartir:
+              </label>
+              <textarea
+                value={shareMessageText}
+                onChange={(e) => setShareMessageText(e.target.value)}
+                className="w-full px-4 py-4 rounded-xl text-gray-800 text-lg font-medium bg-white/90 border-2 border-transparent focus:border-yellow-400 focus:outline-none transition-colors resize-none"
+                rows={6}
+                maxLength={500}
+                placeholder="Escribe tu mensaje personalizado..."
+              />
+              <p className="text-white/70 text-sm mt-2 text-right">
+                {shareMessageText.length}/500 caracteres
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={confirmShare}
+                disabled={!shareMessageText.trim()}
+                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:opacity-50"
+              >
+                📤 Compartir Ahora
+              </button>
+
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-xl transition-colors duration-300"
+              >
+                ✏️ Seguir Editando
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

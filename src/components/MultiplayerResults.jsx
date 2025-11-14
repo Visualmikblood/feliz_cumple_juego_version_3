@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Trophy, Crown, TrendingDown, Share, RotateCcw, MessageCircle, Star } from 'lucide-react';
+import { Trophy, Crown, TrendingDown, Share, RotateCcw, MessageCircle, Star, Award } from 'lucide-react';
+import { API_BASE_URL } from '../utils/api';
 
 const scrollbarStyles = `
   .scrollbar-thin {
@@ -137,7 +138,7 @@ const MultiplayerResults = ({
               });
               return null;
             })()}
-            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-6 mb-6 transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-r from-green-400 to-emerald-500 rounded-2xl p-6 mb-6 transform transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
               <div className="flex items-center gap-4">
                 <Crown className="w-12 h-12 text-yellow-300 animate-bounce" />
                 <div className="flex items-center gap-4">
@@ -170,7 +171,7 @@ const MultiplayerResults = ({
             </div>
 
             {/* Worst Message */}
-            <div className="bg-gradient-to-r from-red-400 to-rose-500 rounded-2xl p-6 transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-r from-red-400 to-rose-500 rounded-2xl p-6 transform transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
               <div className="flex items-center gap-4">
                 <TrendingDown className="w-12 h-12 text-white animate-pulse" />
                 <div className="flex items-center gap-4">
@@ -216,7 +217,7 @@ const MultiplayerResults = ({
                   return (
                     <div
                       key={messageId}
-                      className={`rounded-2xl p-4 transform transition-transform hover:scale-105 cursor-pointer ${
+                      className={`rounded-2xl p-4 transform transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer ${
                         position <= 3
                           ? 'bg-gradient-to-r from-green-400 to-blue-500'
                           : 'bg-white/10'
@@ -291,7 +292,7 @@ const MultiplayerResults = ({
                   return (
                     <div
                       key={playerId}
-                      className={`rounded-2xl p-4 transform transition-transform hover:scale-105 ${
+                      className={`rounded-2xl p-4 transform transition-all duration-200 hover:shadow-lg hover:-translate-y-1 ${
                         isCurrentPlayer
                           ? 'bg-gradient-to-r from-yellow-400 to-orange-500 ring-4 ring-white'
                           : position <= 3
